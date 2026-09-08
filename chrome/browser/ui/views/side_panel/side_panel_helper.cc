@@ -12,6 +12,7 @@
 #include "chrome/browser/ui/side_panel/side_panel_registry.h"
 #include "chrome/browser/ui/side_panel/side_panel_ui.h"
 #include "chrome/browser/ui/ui_features.h"
+#include "chrome/browser/ui/views/side_panel/ark/ark_side_panel_coordinator.h"
 #include "chrome/browser/ui/views/side_panel/bookmarks/bookmarks_side_panel_coordinator.h"
 #include "chrome/browser/ui/views/side_panel/comments/comments_side_panel_coordinator.h"
 #include "chrome/browser/ui/views/side_panel/history/history_side_panel_coordinator.h"
@@ -27,6 +28,10 @@
 void SidePanelHelper::PopulateGlobalEntries(
     BrowserWindowInterface* browser,
     SidePanelRegistry* window_registry) {
+  // Ark AI is the primary product side panel.
+  ArkSidePanelCoordinator::From(browser)->CreateAndRegisterEntry(
+      window_registry);
+
   // Add reading list.
   ReadingListSidePanelCoordinator::From(browser)->CreateAndRegisterEntry(
       window_registry);

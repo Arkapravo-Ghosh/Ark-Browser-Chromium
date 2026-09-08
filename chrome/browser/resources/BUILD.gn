@@ -54,6 +54,7 @@ group("resources") {
       "access_code_cast:resources",
       "actor_overlay:resources",
       "app_service_internals:resources",
+      "ark:resources",
       "autofill_ml_internals:resources",
       "bookmarks:resources",
       "certificate_manager:resources",

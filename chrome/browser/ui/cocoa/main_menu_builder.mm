@@ -321,7 +321,8 @@ NSMenuItem* BuildViewMenu(NSApplication* nsapp,
                Item(IDS_AI_MODE_ENTRYPOINT_CONTEXT_MENU_SHOW)
                    .string_format_1(
                        l10n_util::GetStringUTF16(IDS_AI_MODE_ENTRYPOINT_LABEL))
-                   .command_id(IDC_SHOW_AI_MODE_OMNIBOX_BUTTON),
+                   .command_id(IDC_SHOW_AI_MODE_OMNIBOX_BUTTON)
+                   .remove_if(true),
               Item(IDS_CONTEXT_MENU_SHOW_SEARCH_TOOLS)
                   .command_id(IDC_SHOW_SEARCH_TOOLS),
                Item(IDS_SWITCH_TO_VERTICAL_TAB_MAC)

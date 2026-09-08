@@ -114,6 +114,7 @@ source_set("configs") {
       "//chrome/browser/actor/ui:actor_overlay_web_view",
       "//chrome/browser/ui/webui/access_code_cast",
       "//chrome/browser/ui/webui/app_service_internals",
+      "//chrome/browser/ui/webui/ark",
       "//chrome/browser/ui/webui/autofill_ml_internals",
       "//chrome/browser/ui/webui/color_pipeline_internals",
       "//chrome/browser/ui/webui/history",

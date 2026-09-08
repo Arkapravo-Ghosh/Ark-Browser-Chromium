@@ -18,6 +18,7 @@
 // LINT.IfChange(SIDE_PANEL_ENTRY_IDS)
 #define SIDE_PANEL_ENTRY_IDS(V)                                               \
   /* Global Entries */                                                        \
+  V(kArkAi, std::nullopt, "ArkAI")                                            \
   V(kReadingList, kActionSidePanelShowReadingList, "ReadingList")             \
   V(kBookmarks, kActionSidePanelShowBookmarks, "Bookmarks")                   \
   V(kHistoryClusters, kActionSidePanelShowHistoryCluster, "HistoryClusters")  \

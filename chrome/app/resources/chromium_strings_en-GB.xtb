@@ -14,12 +14,12 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="1098493699368672217">Show search with Chromium in system tray and turn on keyboard shortcut</translation>
 <translation id="1104942323762546749">Chromium wants to export your passwords. Type your Windows password to allow this.</translation>
 <translation id="112640046208448578">Identify things or places and copy or translate text. When you use image search, a screenshot of the page is sent to the server. <ph name="LEARN_MORE" /></translation>
-<translation id="113122355610423240">Chromium is your default browser</translation>
+<translation id="113122355610423240">Ark Browser is your default browser</translation>
 <translation id="1131805035311359397">To check if your passwords are safe from data breaches and other security issues, <ph name="BEGIN_LINK" />sign in to Chromium<ph name="END_LINK" />.</translation>
 <translation id="1153368717515616349">Click the Chromium menu</translation>
 <translation id="1157985233335035034">Recent languages</translation>
 <translation id="1184145431117212167">Installation failed because your version of Windows is not supported.</translation>
-<translation id="1185134272377778587">About Chromium</translation>
+<translation id="1185134272377778587">About Ark Browser</translation>
 <translation id="1186645291482254714">Get price tracking alerts with Chromium on your phone</translation>
 <translation id="1203500561924088507">Thanks for installing. You must restart your browser before using <ph name="BUNDLE_NAME" />.</translation>
 <translation id="1232234696885483911">When you open Image Search, the page title, URL and content, including PDFs, will be sent to the server automatically. <ph name="LEARN_MORE" /></translation>
@@ -33,7 +33,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="1290883685122687410">Setup error: <ph name="METAINSTALLER_EXIT_CODE" />. <ph name="WINDOWS_ERROR" /></translation>
 <translation id="1315551408014407711">Set up your new Chromium profile</translation>
 <translation id="132092532143527429">Try with Gemini in Chromium</translation>
-<translation id="1324107359134968521">Chromium needs Bluetooth access to explore 
+<translation id="1324107359134968521">Chromium needs Bluetooth access to explore
  Bluetooth devices. <ph name="IDS_SERIAL_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK" /></translation>
 <translation id="1329040302064168406">Sign in to Chromium on your phone</translation>
 <translation id="1330562121671411446">Detect language</translation>
@@ -88,7 +88,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="193439633299369377">Chromium OS needs to be restarted to apply the update.</translation>
 <translation id="1951406923938785464">Chromium blocked this download because the file type isn't commonly downloaded and it may be dangerous</translation>
 <translation id="1953553007165777902">Downloading… <ph name="MINUTE" /> minute(s) remaining</translation>
-<translation id="1966382378801805537">Chromium cannot determine or set the default browser</translation>
+<translation id="1966382378801805537">Ark Browser cannot determine or set the default browser</translation>
 <translation id="197326043290947695">Browse smarter with image search</translation>
 <translation id="1990262977744080398">Learn why Chromium blocks some files, opens in new tab</translation>
 <translation id="1999715455684970349">Keeps your Chromium software up to date. If this service is disabled or stopped, your Chromium software will not be kept up to date, meaning security vulnerabilities that may arise cannot be fixed and features may not work. This service uninstalls itself when there is no Chromium software using it.</translation>
@@ -165,7 +165,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="2722636413143664436">To get your passwords, bookmarks and more on all your devices, sign in to Chromium</translation>
 <translation id="2738871930057338499">Unable to connect to the Internet. HTTP 403 Forbidden. Please check your proxy configuration.</translation>
 <translation id="2753623023919742414">Click to search</translation>
-<translation id="2768103863314748511">Set Chromium as your default PDF viewer</translation>
+<translation id="2768103863314748511">Set Ark Browser as your default PDF viewer</translation>
 <translation id="2785438272836277133">This extension contains malware and is unsafe. Remove it from Chromium so that it can no longer see and change your data on sites that you visit, including your personal info.</translation>
 <translation id="2799223571221894425">Relaunch</translation>
 <translation id="2803971713792056305">Your Chromium</translation>
@@ -176,7 +176,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="2847479871509788944">Remove from Chromium...</translation>
 <translation id="2850691299438350830">Keeps you safe on Chromium and may be used to improve your security in other Google apps when you are signed in</translation>
 <translation id="2885378588091291677">Task manager</translation>
-<translation id="2910007522516064972">About &amp;Chromium</translation>
+<translation id="2910007522516064972">About &amp;Ark Browser</translation>
 <translation id="2915996080311180594">Restart later</translation>
 <translation id="2933336679234709858">Your data is encrypted with your passphrase. Enter it to use and save Chromium data in your Google Account.</translation>
 <translation id="2945997411976714835">Install error: The installer process failed to start.</translation>
@@ -202,7 +202,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="3103660991484857065">The installer failed to uncompress archive. Please download Chromium again.</translation>
 <translation id="310459126943037700">Failed to end task(s).</translation>
 <translation id="3104828284009500087">Search anything on page</translation>
-<translation id="3126784891977756556">Keep your passwords, bookmarks and history perfectly synced across devices. Easily access the features that you know and love by updating your default browser to Chromium.</translation>
+<translation id="3126784891977756556">Keep your passwords, bookmarks and history perfectly synced across devices. Easily access the features that you know and love by updating your default browser to Ark Browser.</translation>
 <translation id="3130323860337406239">Chromium is using your microphone.</translation>
 <translation id="3130333203120345554">New search</translation>
 <translation id="3137969841538672700">Drag to search</translation>
@@ -289,7 +289,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="4055805654398742145">P&amp;assword Manager</translation>
 <translation id="4095980151185649725">{COUNT,plural, =1{Your organisation closes Chromium automatically when it isn't used for one minute. Browsing data is deleted. This could include history, autofill and downloads.}other{Your organisation closes Chromium automatically when it isn't used for # minutes. Browsing data is deleted. This could include history, autofill and downloads.}}</translation>
 <translation id="4118474109249235144">Chromium Incognito</translation>
-<translation id="4122186850977583290">Go to the About Chromium page</translation>
+<translation id="4122186850977583290">Go to the About Ark Browser page</translation>
 <translation id="4135244987012252068">Customise Chromium to give your browser a new look</translation>
 <translation id="4147856324248078748">Customise your Chromium</translation>
 <translation id="4148957013307229264">Installing...</translation>
@@ -355,7 +355,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="479167709087336770">This uses the same spell checker that's used in Google search. Text that you type in the browser is sent to Google. You can always change this behaviour in settings.</translation>
 <translation id="4814736265800133385">Use Chromium without an account</translation>
 <translation id="4888717733111232871">Inbound rule for Chromium to allow mDNS traffic.</translation>
-<translation id="4893347770495441059">Relaunch to Update &amp;Chromium</translation>
+<translation id="4893347770495441059">Relaunch to Update &amp;Ark Browser</translation>
 <translation id="4918086044614829423">Accept</translation>
 <translation id="4918844574251943176">Image copied</translation>
 <translation id="4943838377383847465">Chromium is in background mode.</translation>
@@ -397,7 +397,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="538767207339317086">Allow Chromium sign-in</translation>
 <translation id="5405650547142096840">Remove from Chromium</translation>
 <translation id="5424544524441439284">Reduces performance but makes Chromium more resistant to attacks</translation>
-<translation id="5427571867875391349">Set Chromium as your default browser</translation>
+<translation id="5427571867875391349">Set Ark Browser as your default browser</translation>
 <translation id="5438241569118040789"><ph name="PAGE_TITLE" /> – Chromium Beta</translation>
 <translation id="5460618461609401056">{NUM_TABS,plural, =1{Chromium recommends pausing the tab that's slowing your browser}other{Chromium recommends pausing the tabs that are slowing your browser}}</translation>
 <translation id="5473971139929175403">Chromium may not function correctly because it is no longer supported on this Linux distribution</translation>
@@ -406,7 +406,7 @@ Some features may be unavailable and changes to preferences won't be saved.</tra
 <translation id="5496810170689441661">Chromium is trying to edit passwords. Type your Windows password to allow this.</translation>
 <translation id="549975168243349205">Seamlessly work with your favourite apps like Google Drive and YouTube on the go with Chromium.</translation>
 <translation id="5524890928877629608">top-left corner of search area: left <ph name="LEFT" />%, top <ph name="TOP" />%</translation>
-<translation id="5527463683072221100">Open PDFs in Chromium</translation>
+<translation id="5527463683072221100">Open PDFs in Ark Browser</translation>
 <translation id="5536164441519929134">Ask<ph name="LINE_BREAK" />about this tab</translation>
 <translation id="555970465369471303">For security, Chromium turns off JavaScript optimisation when you visit a site for the first time.
 
@@ -414,7 +414,7 @@ If this page isn't working as expected, try allowing optimisation.</translation>
 <translation id="5575874067957905201">Show Gemini in Chromium in Mac menu bar and turn on keyboard shortcut</translation>
 <translation id="5576587363991567745"><ph name="EXISTING_USER" /> is already signed in. To keep your browsing separate, sign in to Chromium in your own profile as <ph name="USER_EMAIL_ADDRESS" />. You'll also get your saved info and more from <ph name="DEVICE" />.</translation>
 <translation id="5579324208890605088">Startup error: Please run the installer as a regular user, not as administrator.</translation>
-<translation id="5580770360767802657">Use Chromium by default and get it pinned</translation>
+<translation id="5580770360767802657">Use Ark Browser by default and get it pinned</translation>
 <translation id="5596627076506792578">More options</translation>
 <translation id="5605834417512968703">Select anything to search with image search or press escape to exit image search</translation>
 <translation id="5618818588972826921">Select any text or image to search with image search or press Escape to exit image search</translation>
@@ -426,8 +426,8 @@ If this page isn't working as expected, try allowing optimisation.</translation>
 <translation id="569897634095159764">Unable to connect to the Internet. Proxy server requires authentication.</translation>
 <translation id="5768371961535086509">Chromium frees up memory from inactive tabs. This gives active tabs and other apps more computer resources and keeps Chromium fast. Your inactive tabs automatically become active again when you go back to them. <ph name="BEGIN_LINK" />Learn more about Memory Saver<ph name="END_LINK" /></translation>
 <translation id="5775198138441669627">If you forgot your passphrase or want to change this setting, <ph name="SETTINGS_LINK" /> the Chromium data in your account</translation>
-<translation id="5800158606660203929">Customise and control Chromium. Set Chromium as your default.</translation>
-<translation id="5802618941556161431">Keep your passwords, bookmarks and history perfectly synced across devices by setting Chromium as your default browser.</translation>
+<translation id="5800158606660203929">Customise and control Ark Browser. Set Ark Browser as your default.</translation>
+<translation id="5802618941556161431">Keep your passwords, bookmarks and history perfectly synced across devices by setting Ark Browser as your default browser.</translation>
 <translation id="5809516625706423866">Unable to connect to the Internet. HTTP 401 Unauthorised. Please check your proxy configuration.</translation>
 <translation id="5817952762723416573">Speeds up sites with Chromium's V8 engine but makes Chromium slightly less resistant to attacks. This setting is off.</translation>
 <translation id="5821520528363214608">To use and save Chromium data in your Google Account, update Chromium</translation>
@@ -474,7 +474,7 @@ If this page isn't working as expected, try allowing optimisation.</translation>
 <translation id="6219195342503754812">{0,plural, =0{Chromium will relaunch now}=1{Chromium will relaunch in 1 second}other{Chromium will relaunch in # seconds}}</translation>
 <translation id="6241367896540709610">Chromium needs storage access permission to download files</translation>
 <translation id="6245734527075554892">Checks URLs with a list of unsafe sites stored in Chromium</translation>
-<translation id="6248213926982192922">Make Chromium the default browser</translation>
+<translation id="6248213926982192922">Make Ark Browser the default browser</translation>
 <translation id="6248988683584659830">Search settings</translation>
 <translation id="6261803579884938625">Get Google's best safety features on the go, with the Chromium app on your phone</translation>
 <translation id="6268381023930128611">Sign out of Chromium?</translation>
@@ -486,7 +486,7 @@ If this page isn't working as expected, try allowing optimisation.</translation>
 <translation id="6309712487085796862">Chromium is using your camera.</translation>
 <translation id="6333502561965082103">Another operation on Chromium is in progress. Please try again later.</translation>
 <translation id="6334986366598267305">Now it's easier to use Chromium with your Google Account and on shared computers.</translation>
-<translation id="6347002662287820329">Get easy access to the features that you know, love and trust by setting Chromium as your default browser.</translation>
+<translation id="6347002662287820329">Get easy access to the features that you know, love and trust by setting Ark Browser as your default browser.</translation>
 <translation id="6347933965114150440">Chromium shortcut</translation>
 <translation id="6366160072964553914">Chromium blocked this download because the file isn't commonly downloaded and it may be dangerous</translation>
 <translation id="6373523479360886564">Are you sure you want to uninstall Chromium?</translation>
@@ -551,7 +551,7 @@ Some features may be unavailable. Please specify a different profile directory o
 <translation id="6877155553248388166">bottom-right corner of search area: right <ph name="RIGHT" />%, bottom <ph name="BOTTOM" />%</translation>
 <translation id="6896758677409633944">Copy</translation>
 <translation id="6898028264630240901">You can pin Contextual tasks to ask questions as you browse</translation>
-<translation id="6901631050894301805">Set Chromium as your default browser and pin it to your taskbar</translation>
+<translation id="6901631050894301805">Set Ark Browser as your default browser and pin it to your taskbar</translation>
 <translation id="6909503629704372277">&amp;Manage Chromium profiles</translation>
 <translation id="6919942714452658456">This action will:
           <ph name="LINE_BREAKS" />
@@ -610,12 +610,12 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="73786666777299047">Open Chrome Web Store</translation>
 <translation id="7394275517973019558">Show Gemini in Chromium in system tray</translation>
 <translation id="7401687852903179959">Search this video with image search</translation>
-<translation id="7407655596887111931">Chromium is now your default browser</translation>
+<translation id="7407655596887111931">Ark Browser is now your default browser</translation>
 <translation id="7413153308467572558">Continue where you left off: Chromium restores your tabs every time you restart. To turn this off, go to</translation>
 <translation id="7427879960656355200">Import passwords to Chromium</translation>
 <translation id="744815265653811511">1. Click <ph name="BUTTON_LABEL" /> below
 2. Click <ph name="BUTTON_2" /> in your Windows settings
-3. Click <ph name="BUTTON_3" /> in the Windows notification to pin Chromium to your taskbar for quick access</translation>
+3. Click <ph name="BUTTON_3" /> in the Windows notification to pin Ark Browser to your taskbar for quick access</translation>
 <translation id="7449453770951226939"><ph name="PAGE_TITLE" /> – Chromium Dev</translation>
 <translation id="7450541714075000668">Text copied</translation>
 <translation id="7458892263350425044">To use your microphone, give Chromium access in <ph name="BEGIN_LINK" />system settings<ph name="END_LINK" /></translation>
@@ -635,7 +635,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="7649070708921625228">Help</translation>
 <translation id="7650134251917003571">Get the Chromium app</translation>
 <translation id="7658239707568436148">Cancel</translation>
-<translation id="7686590090926151193">Chromium isn't your default browser</translation>
+<translation id="7686590090926151193">Ark Browser isn't your default browser</translation>
 <translation id="7689606757190482937">Sync and personalise Chromium across your devices</translation>
 <translation id="7699779824407626136">Chromium update</translation>
 <translation id="7700735928747402058">Your work secured on Chromium</translation>
@@ -727,7 +727,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="8471947159125090285">To use and save Chromium data in your Google Account, verify that it's you.</translation>
 <translation id="8482493977473846331">Shows prompts to sign in to Chromium</translation>
 <translation id="8493179195440786826">Chromium is Out of Date</translation>
-<translation id="850264194101621529">Thanks for choosing Chromium as your default browser!</translation>
+<translation id="850264194101621529">Thanks for choosing Ark Browser as your default browser!</translation>
 <translation id="8522801943730206384">Chromium can check your passwords when you save them</translation>
 <translation id="8525579356836940628">Installation stopped</translation>
 <translation id="8545729292258443488">Take your passwords, tabs and more on the go with the Chromium app on your <ph name="DEVICE_TYPE" /></translation>
@@ -751,7 +751,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="8813277370772331957">Remind me later</translation>
 <translation id="8816416449795340678">Share this document with Gemini in Chromium to get a quick overview and ask follow-up questions</translation>
 <translation id="8818550178040858407">Sign in to Chromium?</translation>
-<translation id="8823401858233292222">Make Chromium the default browser and pin to the taskbar</translation>
+<translation id="8823401858233292222">Make Ark Browser the default browser and pin to the taskbar</translation>
 <translation id="8826492472752484139">Click 'Password Manager'</translation>
 <translation id="8833697763442816810">Chromium OS system</translation>
 <translation id="8852026904190808918">This language is used to display menus, settings, alerts and other text in Chromium</translation>
@@ -760,7 +760,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="8890569919834781711">ChromiumOS could not save Chromium data in your Google Account due to an error signing in</translation>
 <translation id="8891709362986793894">Your organisation requires you to sign in to Chromium</translation>
 <translation id="8907580949721785412">Chromium is trying to show passwords. Type your Windows password to allow this.</translation>
-<translation id="8932992523185907506">Chromium is no longer your default browser. Make Chromium the default browser?</translation>
+<translation id="8932992523185907506">Ark Browser is no longer your default browser. Make Ark Browser the default browser?</translation>
 <translation id="8941642502866065432">Can't update Chromium</translation>
 <translation id="8944232836376404813">This action will:
           <ph name="LINE_BREAKS" />
@@ -782,7 +782,7 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="9022552996538154597">Sign in to Chromium</translation>
 <translation id="9035791714111278917">Show search with Chromium in Mac menu bar and turn on keyboard shortcut</translation>
 <translation id="904366664621834601">Chromium blocked this download because the archive file includes other files that may hide malware</translation>
-<translation id="9053882453960391422">Keep your passwords, bookmarks and history perfectly synced across devices. Easily access the features that you know and love by updating your default browser to Chromium. Chromium will be pinned to your taskbar for quick access.</translation>
+<translation id="9053882453960391422">Keep your passwords, bookmarks and history perfectly synced across devices. Easily access the features that you know and love by updating your default browser to Ark Browser. Ark Browser will be pinned to your taskbar for quick access.</translation>
 <translation id="9056398481763999048">Use Google's best AI tools with the Chromium app on your phone</translation>
 <translation id="9062666675513499497">Sign in to Chromium when you sign in to other Google services</translation>
 <translation id="9078733879136747090">Chromium was automatically closed</translation>
@@ -796,13 +796,13 @@ Google Chrome is unable to recover your settings.</translation>
 <translation id="9148058034647219655">Exit</translation>
 <translation id="9155105544013854680">Continue where you left off: Chromium can restore your tabs every time you restart. To turn this on, go to</translation>
 <translation id="9158494823179993217">Your system administrator has configured Chromium to open an alternative browser to access <ph name="TARGET_URL_HOSTNAME" />.</translation>
-<translation id="9185526690718004400">Relaunch to update &amp;Chromium</translation>
+<translation id="9185526690718004400">Relaunch to update &amp;Ark Browser</translation>
 <translation id="9190841055450128916">Chromium (mDNS-In)</translation>
 <translation id="924957577793602335">Make Chromium your own</translation>
 <translation id="93478295209880648">Chromium may not function correctly because it is no longer supported on Windows XP or Windows Vista</translation>
 <translation id="945098430667185067">Get Google's best safety features on the go with Chromium.</translation>
 <translation id="945522503751344254">Send feedback</translation>
-<translation id="965162752251293939">Who's using Chromium?</translation>
+<translation id="965162752251293939">Who's using Ark Browser?</translation>
 <translation id="967427899662692980">Get Chromium's strongest security</translation>
 <translation id="983803489796659991">Installation failed because the update server does not have any hash data for the application.</translation>
 <translation id="985498048907240953">Use Chromium without an account</translation>

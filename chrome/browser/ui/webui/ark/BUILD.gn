@@ -1,0 +1,45 @@
+# Copyright 2026 Arkapravo Ghosh
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//mojo/public/tools/bindings/mojom.gni")
+
+assert(!is_android)
+
+mojom("mojo_bindings") {
+  sources = [ "ark.mojom" ]
+  webui_module_path = "/"
+}
+
+source_set("ark") {
+  sources = [
+    "ark_side_panel_ui.cc",
+    "ark_side_panel_ui.h",
+    "ark_ui.cc",
+    "ark_ui.h",
+  ]
+  public_deps = [
+    ":mojo_bindings",
+    "//chrome/browser/ui/webui/top_chrome",
+    "//content/public/browser",
+    "//mojo/public/cpp/bindings",
+    "//ui/webui",
+  ]
+  deps = [
+    "//base",
+    "//chrome/browser/ark:ai_service",
+    "//chrome/browser/ark:features",
+    "//chrome/browser/autocomplete",
+    "//chrome/browser/profiles:profile",
+    "//chrome/browser/resources/ark:resources",
+    "//chrome/browser/search_engines",
+    "//chrome/browser/ui/browser_window",
+    "//chrome/browser/ui/side_panel",
+    "//components/omnibox/browser",
+    "//components/search_engines",
+    "//net",
+    "//services/network/public/cpp",
+    "//ui/base",
+    "//ui/webui",
+  ]
+}

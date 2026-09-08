@@ -1,0 +1,21 @@
+// Copyright 2026 Arkapravo Ghosh
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module ark.mojom;
+
+struct ConversationState {
+  string id;
+  string title;
+  string draft;
+};
+
+// Browser-owned capabilities shared by the Ark new tab and AI side panel.
+interface PageHandler {
+  Navigate(string text) => (bool success);
+  GetSearchSuggestions(string query) => (array<string> suggestions);
+  GetChatState() => (ConversationState state);
+  CreateConversation() => (ConversationState state);
+  SaveDraft(string conversation_id, string draft) => (bool success);
+  OpenSidebarWithDraft(string draft) => (bool success);
+};

@@ -4,6 +4,8 @@
 
 #include "chrome/browser/chrome_content_browser_client.h"
 
+#include "chrome/common/ark_url_constants.h"
+
 #include <algorithm>
 #include <iterator>
 #include <map>
@@ -5032,8 +5034,40 @@ bool ChromeContentBrowserClient::
              prefs.root_scrollbar_theme_color;
 }
 
+namespace {
+
+bool HandleArkURLRewrite(GURL* url, content::BrowserContext* browser_context) {
+  if (!url->SchemeIs(ark::kUIScheme)) {
+    return false;
+  }
+  GURL::Replacements replacements;
+  replacements.SetSchemeStr(content::kChromeUIScheme);
+  *url = url->ReplaceComponents(replacements);
+  // Apply normal policy, extension, NTP and WebUI rewriting after normalizing
+  // the alias. Recursion terminates because the URL is no longer ark:.
+  BrowserURLHandler::GetInstance()->RewriteURLIfNecessary(url, browser_context);
+  return true;
+}
+
+bool HandleArkURLReverseRewrite(GURL* url,
+                               content::BrowserContext* browser_context) {
+  if (!url->SchemeIs(content::kChromeUIScheme)) {
+    return false;
+  }
+  GURL::Replacements replacements;
+  replacements.SetSchemeStr(ark::kUIScheme);
+  *url = url->ReplaceComponents(replacements);
+  return true;
+}
+
+}  // namespace
+
 void ChromeContentBrowserClient::BrowserURLHandlerCreated(
     BrowserURLHandler* handler) {
+  // Normalize Ark first; the recursive canonical pass preserves the ordering
+  // and precedence of every Chromium handler below.
+  handler->AddHandlerPair(&HandleArkURLRewrite, &HandleArkURLReverseRewrite);
+
   // The group policy NTP URL handler must be registered before the other NTP
   // URL handlers below. Also register it before the "parts" handlers, so the
   // NTP policy takes precedence over extensions that override the NTP.

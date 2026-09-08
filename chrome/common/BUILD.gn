@@ -526,6 +526,7 @@ static_library("url_constants") {
   # Do not expand this visibility list. Instead, depend on //chrome/common.
   visibility = [ "//chrome/common/*" ]
   sources = [
+    "ark_url_constants.h",
     "url_constants.h",
     "webui_url_constants.cc",
     "webui_url_constants.h",

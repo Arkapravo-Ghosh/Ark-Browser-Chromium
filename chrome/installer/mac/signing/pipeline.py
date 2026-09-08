@@ -95,6 +95,24 @@ async def _customize_and_sign_chrome(
         paths, customization_dist, customization_dist_config
     )
 
+    # For component builds, dynamic libraries (.dylib) reside in paths.input
+    # and must be copied into the app bundle's Frameworks directory so that
+    # the app can run outside of the build directory.
+    import glob, shutil
+    dylib_files = glob.glob(os.path.join(paths.input, '*.dylib'))
+    if dylib_files:
+        frameworks_dir = os.path.join(
+            paths.work, dist_config.app_dir, 'Contents', 'Frameworks'
+        )
+        os.makedirs(frameworks_dir, exist_ok=True)
+        for dylib_path in dylib_files:
+            dest_file = os.path.join(frameworks_dir, os.path.basename(dylib_path))
+            if not os.path.exists(dest_file):
+                try:
+                    os.link(dylib_path, dest_file)
+                except OSError:
+                    shutil.copyfile(dylib_path, dest_file)
+
     work_dir_framework_path = os.path.join(
         paths.work, dist_config.framework_dir
     )
@@ -520,7 +538,7 @@ def _package_dmg(paths, dist, config):
         '--tempdir', paths.work,
         '--source', empty_dir,
         '--target', dmg_path,
-        '--format', 'ULMO',
+        '--format', 'UDZO' if config.identity == '-' else 'ULMO',
         '--volname', config.app_product,
         '--copy', '{}:/'.format(app_path),
     ]
@@ -546,6 +564,10 @@ def _package_dmg(paths, dist, config):
             '--copy', '{}/{}:/.DS_Store'.format(packaging_dir, dsstore_file),
         ]
         # yapf: enable
+    else:
+        ark_icon = os.path.join(packaging_dir, 'app.icns')
+        if os.path.exists(ark_icon):
+            pkg_dmg += ['--icon', ark_icon]
     commands.run_command(pkg_dmg)
 
     return dmg_path

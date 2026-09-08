@@ -1,0 +1,29 @@
+# Copyright 2026 Arkapravo Ghosh
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+source_set("features") {
+  sources = [
+    "ark_features.cc",
+    "ark_features.h",
+  ]
+  public_deps = [ "//base" ]
+}
+
+source_set("ai_service") {
+  sources = [
+    "ark_ai_service.cc",
+    "ark_ai_service.h",
+    "ark_ai_service_factory.cc",
+    "ark_ai_service_factory.h",
+    "ark_conversation_store.cc",
+    "ark_conversation_store.h",
+  ]
+  deps = [
+    "//base",
+    "//chrome/browser/profiles:profile",
+    "//components/keyed_service/core",
+    "//content/public/browser",
+    "//sql",
+  ]
+}

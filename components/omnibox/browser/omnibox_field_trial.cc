@@ -649,10 +649,9 @@ bool IsAimOmniboxEntrypointEnabled(
     return false;
   }
 
-  // If the DSE is Google, the entrypoint should respect Google server
-  // eligibility regardless of the 3p feature state.
+  // If the DSE is Google, the entrypoint is disabled.
   if (search::DefaultSearchProviderIsGoogle(template_url_service)) {
-    return aim_eligibility_service->IsAimEligible();
+    return false;
   }
 
   // If DSE is not Google, then entrypoint should ignore Google server

@@ -36,6 +36,7 @@ chromium-metrics-reviews@google.com.
   <variant name="Affiliation" summary="Affiliation"/>
   <variant name="AnnotationStorage" summary="AnnotationStorage"/>
   <variant name="ArcContentUrlDatabase" summary="ArcContentUrlDatabase"/>
+  <variant name="ArkAI" summary="Ark Browser AI conversations"/>
   <variant name="BackgroundRequestQueue" summary="BackgroundRequestQueue"/>
   <variant name="BrowsingTopics" summary="BrowsingTopics"/>
   <variant name="CdmStorage" summary="CdmStorage"/>

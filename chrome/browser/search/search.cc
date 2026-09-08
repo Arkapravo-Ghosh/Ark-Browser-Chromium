@@ -39,6 +39,7 @@
 #include "chrome/browser/flags/android/chrome_feature_list.h"
 #include "chrome/common/webui_url_constants.h"
 #else
+#include "chrome/browser/ark/ark_features.h"
 #include "chrome/browser/search/instant_service.h"
 #include "chrome/browser/search/instant_service_factory.h"
 #include "chrome/browser/ui/webui/new_tab_page/new_tab_page_ui.h"
@@ -395,6 +396,13 @@ bool HandleNewTabURLRewrite(GURL* url,
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context);
+  // Policy and extension NTP overrides run before this handler. Preserve the
+  // dedicated private-browsing landing pages as well.
+  if (base::FeatureList::IsEnabled(ark::kArkUI) &&
+      !profile->IsOffTheRecord() && !profile->IsGuestSession()) {
+    *url = GURL(ark::kArkNewTabURL);
+    return true;
+  }
   NewTabURLDetails details(NewTabURLDetails::ForProfile(profile));
   UMA_HISTOGRAM_ENUMERATION("NewTabPage.URLState", details.state,
                             NEW_TAB_URL_MAX);
@@ -416,6 +424,12 @@ bool HandleNewTabURLReverseRewrite(GURL* url,
   DCHECK(profile);
   if (profile->IsOffTheRecord()) {
     return false;
+  }
+
+  if (base::FeatureList::IsEnabled(ark::kArkUI) &&
+      *url == GURL(ark::kArkNewTabURL)) {
+    *url = chrome::ChromeUINewTabURLAsGURL();
+    return true;
   }
 
   if (IsInstantNTPURL(*url, profile)) {

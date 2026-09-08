@@ -157,6 +157,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>${CHROMIUM_SHORT_NAME}</string>
+	<key>CrProductDirName</key>
+	<string>Ark Browser</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>

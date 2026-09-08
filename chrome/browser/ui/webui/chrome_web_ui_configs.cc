@@ -83,6 +83,8 @@
 #include "chrome/browser/actor/ui/actor_overlay_ui.h"
 #include "chrome/browser/contextual_cueing/internals/contextual_cueing_internals_ui.h"
 #include "chrome/browser/ui/tabs/tab_group_home/tab_group_home_ui.h"
+#include "chrome/browser/ui/webui/ark/ark_ui.h"
+#include "chrome/browser/ui/webui/ark/ark_side_panel_ui.h"
 #include "chrome/browser/ui/webui/webui_toolbar/webui_toolbar_ui.h"
 #include "chrome/browser/ui/webui_browser/webui_browser_ui.h"
 #if !BUILDFLAG(IS_CHROMEOS)
@@ -262,6 +264,10 @@ void RegisterChromeWebUIConfigs() {
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
   auto& map = content::WebUIConfigMap::GetInstance();
+#if !BUILDFLAG(IS_ANDROID)
+  map.AddWebUIConfig(std::make_unique<ArkUIConfig>());
+  map.AddWebUIConfig(std::make_unique<ArkSidePanelUIConfig>());
+#endif
   map.AddWebUIConfig(std::make_unique<AccessibilityUIConfig>());
   map.AddWebUIConfig(std::make_unique<AutofillInternalsUIConfig>());
   map.AddWebUIConfig(std::make_unique<BluetoothInternalsUIConfig>());

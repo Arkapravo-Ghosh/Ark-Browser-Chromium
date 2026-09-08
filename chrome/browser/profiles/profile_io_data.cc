@@ -4,6 +4,8 @@
 
 #include "chrome/browser/profiles/profile_io_data.h"
 
+#include "chrome/common/ark_url_constants.h"
+
 #include "base/containers/fixed_flat_set.h"
 #include "base/feature_list.h"
 #include "base/logging.h"
@@ -43,6 +45,7 @@ bool ProfileIOData::IsHandledProtocol(std::string_view scheme) {
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
       extensions::kExtensionScheme,
 #endif
+      ark::kUIScheme,
       content::kChromeUIScheme,
       content::kChromeUIUntrustedScheme,
       url::kDataScheme,

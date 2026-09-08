@@ -149,6 +149,7 @@ copy("copies") {
     "rebrand_chrome.py",
     "sign_chrome.py",
     "universalizer.py",
+    "//chrome/app/theme/chromium/mac/app.icns",
   ]
 
   if (is_chrome_branded) {

@@ -43,6 +43,7 @@ std::u16string GetSecurityChipText(const LocationBarModel* model,
   }
 
   if (model->GetURL().SchemeIs(content::kChromeUIScheme) ||
+      model->GetURL().SchemeIs("ark") ||
       (contextual_tasks::ShouldShowExpandedSecurityChip() &&
        model->IsContextualTasksPage())) {
     return l10n_util::GetStringUTF16(IDS_SHORT_PRODUCT_NAME);

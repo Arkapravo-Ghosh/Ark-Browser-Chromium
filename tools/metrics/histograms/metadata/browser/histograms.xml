@@ -59,6 +59,7 @@ chromium-metrics-reviews@google.com.
 <!-- LINT.IfChange(SidePanelEntry) -->
 
 <variants name="SidePanelEntry">
+  <variant name="ArkAI" summary="Ark AI"/>
   <variant name="AboutThisSite" summary="about this site"/>
   <variant name="Assistant" summary="assistant"/>
   <variant name="Bookmarks" summary="bookmarks"/>

@@ -35,6 +35,7 @@ class ActorBorderViewController;
 class ActorUiWindowController;
 class BookmarkBarController;
 class BookmarksSidePanelCoordinator;
+class ArkSidePanelCoordinator;
 class BookmarksServiceFeature;
 class BreadcrumbManagerBrowserAgent;
 
@@ -355,6 +356,7 @@ class BrowserWindowFeatures {
   std::unique_ptr<BookmarksServiceFeature> bookmarks_service_feature_;
   std::unique_ptr<BookmarksSidePanelCoordinator>
       bookmarks_side_panel_coordinator_;
+  std::unique_ptr<ArkSidePanelCoordinator> ark_side_panel_coordinator_;
 
   // Listens for browser-related breadcrumb events to be added to crash reports.
   std::unique_ptr<BreadcrumbManagerBrowserAgent>

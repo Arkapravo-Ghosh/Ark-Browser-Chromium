@@ -276,7 +276,10 @@ are declared in tools/grit/grit_args.gni.
   </translations>
   <release seq="1">
     <!-- IMPORTANT: .grdp files must be in the same directory as this file -->
-    <messages fallback_to_english="true">
+      <messages fallback_to_english="true">
+        <message name="IDS_ARK_AI_TITLE" desc="Title of the Ark AI assistant sidebar and toolbar button.">
+          Ark AI
+        </message>
       <!-- Access Code Cast specific strings -->
       <part file="access_code_cast_strings.grdp" />
 

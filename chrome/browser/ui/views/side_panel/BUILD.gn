@@ -9,6 +9,8 @@ import("//extensions/buildflags/buildflags.gni")
 
 source_set("side_panel") {
   sources = [
+    "ark/ark_side_panel_coordinator.cc",
+    "ark/ark_side_panel_coordinator.h",
     "bookmarks/bookmarks_side_panel_coordinator.cc",
     "bookmarks/bookmarks_side_panel_coordinator.h",
     "comments/comments_side_panel_coordinator.cc",
@@ -65,6 +67,7 @@ source_set("side_panel") {
     "//chrome/browser/ui/color:color_headers",
     "//chrome/browser/ui/tabs:tab_model",
     "//chrome/browser/ui/toolbar/pinned_toolbar",
+    "//chrome/browser/ui/webui/ark",
     "//chrome/browser/ui/webui/new_tab_footer",
     "//chrome/browser/ui/webui/side_panel/reading_list",
     "//chrome/common",

@@ -22,9 +22,11 @@
 #include "base/trace_event/trace_event.h"
 #include "build/build_config.h"
 #include "chrome/app/chrome_command_ids.h"
+#include "chrome/app/vector_icons/vector_icons.h"
 #include "chrome/browser/actor/ui/actor_ui_metrics.h"
 #include "chrome/browser/actor/ui/task_list_bubble/actor_task_list_bubble.h"
 #include "chrome/browser/actor/ui/task_list_bubble/actor_task_list_bubble_controller.h"
+#include "chrome/browser/ark/ark_features.h"
 #include "chrome/browser/command_updater.h"
 #include "chrome/browser/glic/browser_ui/glic_actor_nudge_controller.h"
 #include "chrome/browser/glic/browser_ui/glic_actor_task_icon_manager_factory.h"
@@ -59,6 +61,8 @@
 #include "chrome/browser/ui/layout_constants.h"
 #include "chrome/browser/ui/omnibox/omnibox_view.h"
 #include "chrome/browser/ui/page_action/page_action_properties_provider.h"
+#include "chrome/browser/ui/side_panel/side_panel_entry_key.h"
+#include "chrome/browser/ui/side_panel/side_panel_ui.h"
 #include "chrome/browser/ui/tabs/public/tab_features.h"
 #include "chrome/browser/ui/tabs/tab_strip_model.h"
 #include "chrome/browser/ui/tabs/tab_strip_prefs.h"
@@ -411,6 +415,23 @@ void ToolbarView::Init() {
 #endif
 
   // Always add children in order from left to right, for accessibility.
+  // Ark owns the extreme-left product entry point, immediately before Back.
+  if (base::FeatureList::IsEnabled(ark::kArkUI)) {
+    ark_ai_button_ =
+        AddChildView(std::make_unique<ToolbarButton>(base::BindRepeating(
+            [](BrowserWindowInterface* browser, const ui::Event&) {
+              if (auto* side_panel = SidePanelUI::From(browser)) {
+                side_panel->Toggle(SidePanelEntryKey(SidePanelEntryId::kArkAi),
+                                   SidePanelOpenTrigger::kToolbarButton);
+              }
+            },
+            browser_)));
+    ark_ai_button_->SetVectorIcon(kArkAiIcon);
+    ark_ai_button_->SetTooltipText(l10n_util::GetStringUTF16(IDS_ARK_AI_TITLE));
+    ark_ai_button_->GetViewAccessibility().SetName(
+        l10n_util::GetStringUTF16(IDS_ARK_AI_TITLE));
+  }
+
   if (!features::IsWebUIBackForwardButtonEnabled()) {
     back_ = AddChildView(std::make_unique<BackForwardButton>(
         BackForwardButton::Direction::kBack,
@@ -1916,7 +1937,6 @@ ReloadControl* ToolbarView::GetReloadButton() {
   }
   return reload_;
 }
-
 
 ToolbarButton* ToolbarView::GetDownloadButton() {
   return pinned_toolbar_actions_container_

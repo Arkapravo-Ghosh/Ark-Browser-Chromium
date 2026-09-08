@@ -142,6 +142,7 @@
 #include "chrome/browser/ui/views/qrcode_generator/qrcode_window_controller.h"
 #include "chrome/browser/ui/views/send_tab_to_self/send_tab_to_self_toolbar_bubble_controller.h"
 #include "chrome/browser/ui/views/sharing/sharing_window_controller.h"
+#include "chrome/browser/ui/views/side_panel/ark/ark_side_panel_coordinator.h"
 #include "chrome/browser/ui/views/side_panel/bookmarks/bookmarks_side_panel_coordinator.h"
 #include "chrome/browser/ui/views/side_panel/comments/comments_side_panel_coordinator.h"
 #include "chrome/browser/ui/views/side_panel/history/history_side_panel_coordinator.h"
@@ -294,6 +295,10 @@ void BrowserWindowFeatures::Init(BrowserWindowInterface* browser) {
   bookmarks_side_panel_coordinator_ =
       GetUserDataFactory().CreateInstance<BookmarksSidePanelCoordinator>(
           *browser, *browser);
+
+  ark_side_panel_coordinator_ =
+      GetUserDataFactory().CreateInstance<ArkSidePanelCoordinator>(*browser,
+                                                                   *browser);
 
   if (breadcrumbs::IsEnabled(g_browser_process->local_state())) {
     breadcrumb_manager_browser_agent_ =

@@ -105,10 +105,7 @@ std::optional<AiModeButtonUiConfig> AiModeButtonService::BuildCurrentUiConfig()
       dse->GetEngineType(template_url_service_->search_terms_data());
 
   if (type == SearchEngineType::SEARCH_ENGINE_GOOGLE) {
-    return AiModeButtonUiConfig(
-        type, l10n_util::GetStringUTF16(IDS_AI_MODE_ENTRYPOINT_LABEL),
-        dse->short_name(), /*favicon_url=*/"", /*navigation_url=*/"",
-        /*navigation_url_empty=*/"");
+    return std::nullopt;
   }
 
   const ai_mode_button_config::AiModeButtonConfig* found_config = nullptr;

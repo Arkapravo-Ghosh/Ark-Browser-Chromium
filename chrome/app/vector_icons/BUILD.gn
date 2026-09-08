@@ -30,6 +30,7 @@ aggregate_vector_icons("chrome_vector_icons") {
     "add_photo_alternate.icon",
     "add_photo_alternate_old.icon",
     "android_security_privacy_safe_filled.icon",
+    "ark_ai.icon",
     "arrow_back_old.icon",
     "arrow_circle_up_filled.icon",
     "arrow_downward.icon",

@@ -64,9 +64,16 @@ std::u16string
 ChromeLocationBarModelDelegate::FormattedStringWithEquivalentMeaning(
     const GURL& url,
     const std::u16string& formatted_url) const {
-  return AutocompleteInput::FormattedStringWithEquivalentMeaning(
+  std::u16string result = AutocompleteInput::FormattedStringWithEquivalentMeaning(
       url, formatted_url, ChromeAutocompleteSchemeClassifier(GetProfile()),
       nullptr);
+  // All built-in page entry points (including existing Chromium menus) display
+  // the same editable Ark alias, while security UI keeps the canonical URL.
+  if (url.SchemeIs(content::kChromeUIScheme) &&
+      result.starts_with(u"chrome://")) {
+    result.replace(0, 6, u"ark");
+  }
+  return result;
 }
 
 bool ChromeLocationBarModelDelegate::GetURL(GURL* url) const {
@@ -194,7 +201,7 @@ const gfx::VectorIcon* ChromeLocationBarModelDelegate::GetVectorIconOverride()
     return &vector_icons::kGoogleColorIcon;
   }
 
-  if (url.SchemeIs(content::kChromeUIScheme)) {
+  if (url.SchemeIs(content::kChromeUIScheme) || url.SchemeIs("ark")) {
     return &(features::IsRoundedIconsEnabled()
                  ? omnibox::kChromeProductIcon
                  : omnibox::kProductChromeRefreshOldIcon);

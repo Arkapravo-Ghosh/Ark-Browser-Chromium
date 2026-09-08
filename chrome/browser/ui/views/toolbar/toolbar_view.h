@@ -379,6 +379,7 @@ class ToolbarView : public views::AccessiblePaneView,
   // |location_bar_| is guaranteed to exist. These pointers are owned by the
   // view hierarchy.
   raw_ptr<ToolbarButton> contextual_tasks_button_ = nullptr;
+  raw_ptr<ToolbarButton> ark_ai_button_ = nullptr;
   raw_ptr<ToolbarButton> back_ = nullptr;
   raw_ptr<ToolbarButton> forward_ = nullptr;
   raw_ptr<ReloadButton> reload_ = nullptr;

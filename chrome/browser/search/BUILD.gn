@@ -74,6 +74,7 @@ source_set("search") {
     deps += [
       "//chrome/app/theme:theme_resources",
       "//chrome/app/theme:theme_resources_grit",
+      "//chrome/browser/ark:features",
       "//chrome/browser/resources/new_tab_page_instant:resources",
       "//chrome/browser/resources/new_tab_page_instant:resources_grit",
       "//chrome/browser/ui/webui:theme_source",

@@ -4,6 +4,8 @@
 
 #include "chrome/common/chrome_content_client.h"
 
+#include "chrome/common/ark_url_constants.h"
+
 #include <stdint.h>
 
 #include <memory>
@@ -184,6 +186,7 @@ void ChromeContentClient::AddContentDecryptionModules(
 // details). If you add a new scheme, please also add WPT tests for it like
 // https://crrev.com/c/5790445.
 static const char* const kChromeStandardURLSchemes[] = {
+    ark::kUIScheme,
 #if BUILDFLAG(ENABLE_EXTENSIONS_CORE)
     extensions::kExtensionScheme,
 #endif
@@ -223,6 +226,9 @@ void ChromeContentClient::AddAdditionalSchemes(Schemes* schemes) {
 #endif
   schemes->savable_schemes.push_back(chrome::kChromeSearchScheme);
   schemes->savable_schemes.push_back(dom_distiller::kDomDistillerScheme);
+
+  // Ark URLs resolve to canonical WebUI origins before loading.
+  schemes->secure_schemes.push_back(ark::kUIScheme);
 
   // chrome-search: resources shouldn't trigger insecure content warnings.
   schemes->secure_schemes.push_back(chrome::kChromeSearchScheme);
