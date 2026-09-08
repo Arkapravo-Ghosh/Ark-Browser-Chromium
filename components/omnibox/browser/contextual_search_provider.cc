@@ -136,35 +136,15 @@ struct EligibleMatchesAndActions {
     // - `LensEntrypointEligible()` restricts lens to web & SRP.
     // - Unlike `lens_entry_match`, `toolbelt_lens` is not restricted to zero
     //   inputs.
-    toolbelt_lens =
-        toolbelt &&
-        ToolbeltActionEligible(input,
-                               toolbelt_config.show_lens_action_on_non_ntp,
-                               toolbelt_config.show_lens_action_on_ntp) &&
-        (toolbelt_config.always_include_lens_action ||
-         ContextualSearchProvider::LensEntrypointEligible(input, client));
+    toolbelt_lens = false;
 
     // Hide toolbelt if it would be empty.
     toolbelt = toolbelt && toolbelt_lens;
 
-    // - Check feature/params.
-    // - Restricted to DSE google, which is already checked in
-    //   `client->IsLensEnabled()`.
-    // - Not restricted by locale.
-    // - `LensEntrypointEligible()` restricts lens to web & SRP.
-    // - Unlike `toolbelt_lens`, `lens_entry_match` is restricted to zero
-    //   inputs. `lens_entry_match`, `toolbelt_lens` is not restricted to zero
-    //   inputs.
-    // - Only shown if toolbelt lens not shown.
-    // - Only shown if contextual chips are not enabled.
+    lens_entry_match = false;
+
     const auto& contextual_search_config =
         omnibox_feature_configs::ContextualSearch::Get();
-    lens_entry_match =
-        contextual_search_config.show_open_lens_action && !toolbelt_lens &&
-        input.IsZeroSuggest() &&
-        ContextualSearchProvider::LensEntrypointEligible(input, client) &&
-        !client->IsOmniboxNextLensSearchChipEnabled() &&
-        !client->IsAskGShowChipEnabled();
 
     // - Check feature/params.
     // - Disabled if either `toolbelt` or `contextual_search_config` are shown.
@@ -355,11 +335,8 @@ AutocompleteMatch ContextualSearchProvider::CreateLensEntrypointMatch(
 bool ContextualSearchProvider::LensEntrypointEligible(
     const AutocompleteInput& input,
     const AutocompleteProviderClient* client) {
-  return (omnibox::IsOtherWebPage(input.current_page_classification()) ||
-          omnibox::IsSearchResultsPage(input.current_page_classification())) &&
-         (input.current_url().SchemeIsHTTPOrHTTPS() ||
-          input.current_url().SchemeIs(url::kFileScheme)) &&
-         client->IsLensEnabled() && client->AreLensEntrypointsVisible();
+  // Disabled in Ark Browser: Google AI / Lens sidebar entry points are removed.
+  return false;
 }
 
 ContextualSearchProvider::ContextualSearchProvider(

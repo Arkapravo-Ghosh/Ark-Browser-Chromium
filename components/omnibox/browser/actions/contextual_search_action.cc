@@ -129,14 +129,7 @@ void ContextualSearchOpenLensAction::RecordActionShown(size_t position,
 }
 
 void ContextualSearchOpenLensAction::Execute(ExecutionContext& context) const {
-  if (context.client_->ShouldOpenComposeboxForAskG()) {
-    context.client_->OpenComposeboxForAskG();
-  } else if (context.client_->ShouldOpenCoBrowsePanel()) {
-    context.client_->OpenCoBrowsePanel();
-  } else {
-    context.client_->OpenLensOverlay(
-        /*show=*/true, lens::LensOverlayInvocationSource::kOmniboxPageAction);
-  }
+  // Disabled in Ark Browser: Google AI sidebar / Lens overlay is not used.
 }
 
 #if defined(SUPPORT_PEDALS_VECTOR_ICONS)

@@ -114,7 +114,7 @@ BASE_FEATURE(ContextualSearch::kSendContextualUrlSuggestParam,
 
 BASE_FEATURE(ContextualSearch::kOmniboxContextualSearchOnFocusSuggestions,
              "OmniboxContextualSearchOnFocusSuggestions",
-             base::FEATURE_ENABLED_BY_DEFAULT);
+             base::FEATURE_DISABLED_BY_DEFAULT);
 
 BASE_FEATURE(ContextualSearch::kContextualSearchBoxUsesContextualSearchProvider,
              "ContextualSearchBoxUsesContextualSearchProvider",
@@ -202,8 +202,7 @@ ContextualSearch::ContextualSearch() {
       base::FeatureParam<int>(&kContextualSearchAlternativeActionLabel,
                               "LabelIndex", 0)
           .Get();
-  show_open_lens_action =
-      feature_enabled(kOmniboxContextualSearchOnFocusSuggestions);
+  show_open_lens_action = false;
   use_apc_paywall_signal = feature_enabled(kUseApcPaywallSignal);
   show_suggestions_on_no_apc =
       base::FeatureList::IsEnabled(kShowSuggestionsOnNoApc);

@@ -391,7 +391,8 @@ void PrimaryAccountManager::RegisterProfilePrefs(PrefRegistrySimple* registry) {
       prefs::kGoogleServicesSyncingUsernameMigratedToSignedIn, std::string());
   registry->RegisterIntegerPref(prefs::kGoogleServicesSyncingUserMigrationType,
                                 /*SyncToSigninMigrationType::kUnknown=*/0);
-  registry->RegisterBooleanPref(prefs::kSigninAllowed, true);
+  // Disabled by default in Ark Browser.
+  registry->RegisterBooleanPref(prefs::kSigninAllowed, false);
   registry->RegisterBooleanPref(prefs::kSignedInWithCredentialProvider, false);
   registry->RegisterBooleanPref(prefs::kExplicitBrowserSignin, false);
   registry->RegisterBooleanPref(

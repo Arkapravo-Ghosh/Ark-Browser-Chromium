@@ -646,41 +646,11 @@ bool ChromeAutocompleteProviderClient::IsHistoryEmbeddingsSettingVisible()
 }
 
 bool ChromeAutocompleteProviderClient::IsLensEnabled() const {
-#if BUILDFLAG(IS_ANDROID)
-  if (base::FeatureList::IsEnabled(lens::features::kLensOverlayAndroid)) {
-    JNIEnv* env = base::android::AttachCurrentThread();
-    return Java_LensSupportStatusHelper_isLensSearchSupported(
-        env, profile_->GetJavaObject(), profile_->IsIncognitoProfile());
-  }
-
-#else
-  if (auto* lens_search_controller =
-          GetLensSearchController(GetWebContents(web_contents_getter_))) {
-    // Guaranteed to exist if lens_search_controller is not null.
-    return lens::LensOverlayEntryPointController::From(
-               lens_search_controller->GetTabInterface()
-                   ->GetBrowserWindowInterface())
-        ->IsEnabled();
-  }
-#endif  // BUILDFLAG(IS_ANDROID)
-
   return false;
 }
 
 bool ChromeAutocompleteProviderClient::AreLensEntrypointsVisible() const {
-#if BUILDFLAG(IS_ANDROID)
-  return IsLensEnabled();
-#else
-  if (auto* lens_search_controller =
-          GetLensSearchController(GetWebContents(web_contents_getter_))) {
-    // Guaranteed to exist if lens_search_controller is  not null.
-    return lens::LensOverlayEntryPointController::From(
-               lens_search_controller->GetTabInterface()
-                   ->GetBrowserWindowInterface())
-        ->AreVisible();
-  }
   return false;
-#endif  // BUILDFLAG(IS_ANDROID)
 }
 
 std::optional<bool> ChromeAutocompleteProviderClient::IsPagePaywalled() const {
@@ -815,13 +785,7 @@ bool ChromeAutocompleteProviderClient::OpenJourneys(const std::string& query) {
 }
 
 bool ChromeAutocompleteProviderClient::ShouldOpenCoBrowsePanel() const {
-#if !BUILDFLAG(IS_ANDROID)
-  return contextual_tasks::IsContextualTasksUIEnabled() &&
-         (omnibox::kAskGCoBrowse.Get() ||
-          omnibox::kAskGCoBrowseWithVisualSelection.Get());
-#else
   return false;
-#endif
 }
 
 void ChromeAutocompleteProviderClient::OpenCoBrowsePanel() {
@@ -954,11 +918,7 @@ void ChromeAutocompleteProviderClient::PromptPageTranslation() {
 }
 
 bool ChromeAutocompleteProviderClient::ShouldOpenComposeboxForAskG() const {
-#if !BUILDFLAG(IS_ANDROID)
-  return omnibox::IsAimPopupFeatureEnabled() && omnibox::kAskGComposeBox.Get();
-#else
   return false;
-#endif
 }
 
 // This is implemented in OmniboxEditModelActionClient.

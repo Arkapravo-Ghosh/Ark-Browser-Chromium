@@ -280,16 +280,10 @@ BASE_FEATURE(kPasswordSaveUpdateDropdownMenuExperiment,
              base::FEATURE_DISABLED_BY_DEFAULT);
 #endif
 
-BASE_FEATURE(kSidePanelFlyoverAnimation,
-#if BUILDFLAG(IS_MAC)
-             base::FEATURE_DISABLED_BY_DEFAULT
-#else
-             base::FEATURE_ENABLED_BY_DEFAULT
-#endif
-);
+BASE_FEATURE(kSidePanelFlyoverAnimation, base::FEATURE_DISABLED_BY_DEFAULT);
 
 bool UseSidePanelFlyoverAnimation() {
-  return base::FeatureList::IsEnabled(kSidePanelFlyoverAnimation);
+  return false;
 }
 
 BASE_FEATURE_PARAM(int,

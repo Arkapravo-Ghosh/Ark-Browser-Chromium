@@ -84,9 +84,8 @@ export class SettingsPeoplePageIndexElement extends
               'account', 'no-animation', 'no-animation');
           break;
         case routes.GOOGLE_SERVICES:
-          assert(this.replaceSyncPromosWithSignInPromos_);
           this.$.viewManager.switchView(
-              'googleServices', 'no-animation', 'no-animation');
+              'parent', 'no-animation', 'no-animation');
           break;
         // <if expr="not is_chromeos">
         case routes.IMPORT_DATA:

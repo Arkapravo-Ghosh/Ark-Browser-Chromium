@@ -890,46 +890,8 @@ bool DiceWebSigninInterceptor::ShouldShowMultiUserBubble(
 bool DiceWebSigninInterceptor::ShouldShowChromeSigninBubble(
     const GaiaId& gaia_id,
     std::string_view email) const {
-  // If the access point is not set, we cannot accurately know if we have to
-  // show the bubble or not, so we will not show it.
-  if (!state_->access_point_.has_value()) {
-    return false;
-  }
-
-  // Only show the Chrome Signin Bubble when the signin event occurred through
-  // a regular web signin in (not triggered through a chrome feature).
-  if (state_->access_point_ != signin_metrics::AccessPoint::kWebSignin) {
-    return false;
-  }
-
-  // Check if an account is already signed in to Chrome.
-  if (identity_manager_->HasPrimaryAccount(signin::ConsentLevel::kSignin)) {
-    return false;
-  }
-
-  // Check for the Chrome Signin setting value and possible reprompts.
-  SigninPrefs signin_prefs(*profile_->GetPrefs());
-  ChromeSigninUserChoice user_choice =
-      signin_prefs.GetChromeSigninInterceptionUserChoice(gaia_id);
-  switch (user_choice) {
-    case ChromeSigninUserChoice::kNoChoice:
-    case ChromeSigninUserChoice::kAlwaysAsk:
-      break;
-    case ChromeSigninUserChoice::kSignin:
-      // This should not happen in a regular case, but rather an edge case; if
-      // the user changed their preference while the interception is in
-      // progress. Might also happen during tests that do not test the full
-      // flow; mainly the early flow that automatically signs in and do not
-      // get to this point.
-      return false;
-    case ChromeSigninUserChoice::kDoNotSignin:
-      if (!ShouldAllowChromeSigninBubbleReprompt(signin_prefs, gaia_id)) {
-        return false;
-      }
-      break;
-  }
-
-  return IsUsernameAllowedForInterceptionByPattern(email);
+  // Disabled in Ark Browser: do not show Chrome Signin Bubble.
+  return false;
 }
 
 void DiceWebSigninInterceptor::ShowSigninInterceptionBubble(

@@ -3596,7 +3596,7 @@
 
     <!-- Sync / People Page -->
     <message name="IDS_SETTINGS_PEOPLE" desc="Name of the settings page which manages the user's relationship to Google.">
-      You and Google
+      Your Profile
     </message>
     <message name="IDS_SETTINGS_CHANGE_PICTURE_PROFILE_PHOTO" desc="The text on the Google profile photo of the user.">
       Google Profile photo

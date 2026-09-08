@@ -486,11 +486,8 @@ void DiceWebSigninInterceptionBubbleView::ApplyAvatarButtonEffects() {
 // static
 bool DiceWebSigninInterceptorDelegate::IsSigninInterceptionSupportedInternal(
     const BrowserWindowInterface& browser) {
-  // Some browsers, such as web apps, don't have an avatar toolbar button to
-  // anchor the bubble. Even if a web app has an avatar toolbar button, we
-  // still don't support signin interception.
-  return GetAvatarToolbarButtonInterface(browser) != nullptr &&
-         !web_app::AppBrowserController::IsWebApp(&browser);
+  // Disabled in Ark Browser: do not intercept web sign-ins to prompt for browser sign-in.
+  return false;
 }
 
 std::unique_ptr<ScopedWebSigninInterceptionBubbleHandle>

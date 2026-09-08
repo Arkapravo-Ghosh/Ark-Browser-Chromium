@@ -494,10 +494,7 @@ export class SettingsPeoplePageElement extends SettingsPeoplePageElementBase {
     assert(triggerId);
 
     const control = this.shadowRoot.querySelector<HTMLElement>(`#${triggerId}`);
-    assert(
-        control,
-        `Failed to find associated control for child '${childViewId}'`);
-    return control;
+    return control || this;
   }
 }
 

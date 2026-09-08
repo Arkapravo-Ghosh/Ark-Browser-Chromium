@@ -91,7 +91,9 @@ actions::ActionItem* SidePanelHelper::GetActionItem(
 
   std::optional<actions::ActionId> action_id =
       SidePanelEntryIdToActionId(entry_key.id());
-  CHECK(action_id.has_value());
+  if (!action_id.has_value()) {
+    return nullptr;
+  }
   return actions::ActionManager::Get().FindAction(
       action_id.value(), browser_actions->root_action_item());
 }

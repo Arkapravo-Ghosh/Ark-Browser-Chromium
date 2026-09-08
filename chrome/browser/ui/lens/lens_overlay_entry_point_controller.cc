@@ -85,39 +85,8 @@ LensOverlayEntryPointController* LensOverlayEntryPointController::From(
 
 // static
 bool LensOverlayEntryPointController::IsEnabledOnInit(Profile* profile) {
-  // Feature is disabled via finch.
-  if (!lens::features::IsLensOverlayEnabled()) {
-    return false;
-  }
-
-  // If Lens in contextual is enabled, the enterprise policy check is done
-  // in the contextual search service for the `SearchContentSharing` policy.
-  const PrefService* pref_service = profile->GetPrefs();
-  if (contextual_tasks::GetEnableLensInContextualTasks()) {
-    if (!contextual_search::ContextualSearchService::IsContextSharingEnabled(
-            pref_service)) {
-      return false;
-    }
-  } else {
-    // Lens Overlay is disabled via the enterprise policy.
-    lens::prefs::LensOverlaySettingsPolicyValue policy_value =
-        static_cast<lens::prefs::LensOverlaySettingsPolicyValue>(
-            pref_service->GetInteger(lens::prefs::kLensOverlaySettings));
-    if (policy_value ==
-        lens::prefs::LensOverlaySettingsPolicyValue::kDisabled) {
-      return false;
-    }
-  }
-
-  // Lens Overlay is only enabled if the user's default search engine is Google.
-  if (lens::features::IsLensOverlayGoogleDseRequired() &&
-      !search::DefaultSearchProviderIsGoogle(profile)) {
-    return false;
-  }
-
-  // Finally, only enable the overlay if user meets our minimum RAM requirement.
-  static int phys_mem_mb = base::SysInfo::AmountOfTotalPhysicalMemory().InMiB();
-  return phys_mem_mb > lens::features::GetLensOverlayMinRamMb();
+  // Disabled in Ark Browser: Google AI / Lens entry points are removed.
+  return false;
 }
 
 LensOverlayEntryPointController::LensOverlayEntryPointController(

@@ -96,8 +96,7 @@ export class SettingsMenuElement extends SettingsMenuElementBase {
       MetricsBrowserProxyImpl.getInstance();
 
   private showAiPageMenuItem_(): boolean {
-    return this.showAiPage_ &&
-        (!this.pageVisibility_ || this.pageVisibility_.ai !== false);
+    return false;
   }
 
   override currentRouteChanged(newRoute: Route) {

@@ -102,7 +102,9 @@ bool SidePanelToolbarPinningController::GetPinnedStateFor(
 
     std::optional<actions::ActionId> action_id =
         SidePanelEntryIdToActionId(key.id());
-    CHECK(action_id.has_value());
+    if (!action_id.has_value()) {
+      return false;
+    }
     return actions_model->Contains(action_id.value());
   }
 }
@@ -111,9 +113,15 @@ void SidePanelToolbarPinningController::UpdatePinState(
     SidePanelEntry::Key entry_key) {
   Profile* const profile = browser_->GetProfile();
 
-  std::optional<actions::ActionId> action_id =
-      SidePanelHelper::GetActionItem(&*browser_, entry_key)->GetActionId();
-  CHECK(action_id.has_value());
+  actions::ActionItem* const action_item =
+      SidePanelHelper::GetActionItem(&*browser_, entry_key);
+  if (!action_item) {
+    return;
+  }
+  std::optional<actions::ActionId> action_id = action_item->GetActionId();
+  if (!action_id.has_value()) {
+    return;
+  }
 
   bool updated_pin_state = false;
 
@@ -203,14 +211,17 @@ void SidePanelToolbarPinningController::UpdateActiveState(
 
     std::optional<actions::ActionId> action_id =
         SidePanelEntryIdToActionId(target_id);
-    CHECK(action_id.has_value());
+    if (!action_id.has_value()) {
+      return;
+    }
     toolbar_container->UpdateActionState(*action_id, show_active_in_toolbar);
 
     if (other_id.has_value()) {
       std::optional<actions::ActionId> other_action_id =
           SidePanelEntryIdToActionId(*other_id);
-      CHECK(other_action_id.has_value());
-      toolbar_container->UpdateActionState(*other_action_id, false);
+      if (other_action_id.has_value()) {
+        toolbar_container->UpdateActionState(*other_action_id, false);
+      }
     }
   }
 }

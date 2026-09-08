@@ -636,12 +636,8 @@ SettingsUI::SettingsUI(content::WebUI* web_ui)
   const bool show_ai_settings_for_testing = base::FeatureList::IsEnabled(
       optimization_guide::features::kAiSettingsPageForceAvailable);
 
-  // Show the AI features section in the AI page if any of the AI features are
-  // enabled.
-  bool show_ai_features_section = show_ai_settings_for_testing;
   for (auto [name, visible] : optimization_guide_features) {
     html_source->AddBoolean(name, visible || show_ai_settings_for_testing);
-    show_ai_features_section |= visible;
   }
 
 #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
@@ -651,17 +647,14 @@ SettingsUI::SettingsUI(content::WebUI* web_ui)
   bool show_on_device_ai_settings =
       base::FeatureList::IsEnabled(features::kShowOnDeviceAiSettings);
   html_source->AddBoolean("showOnDeviceAiSettings", show_on_device_ai_settings);
-  show_ai_features_section |= show_on_device_ai_settings;
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
 
-  // Within the AI subpage are separate sections for Glic and for all other AI
-  // features, the visibility of these are separately controlled but we want to
-  // show the subpage if any of the AI features or Glic are enabled.
-  html_source->AddBoolean("showAiPage", show_glic_section ||
-                                            show_ai_features_section ||
-                                            enable_ai_mode_search);
-  html_source->AddBoolean("showAiPageAiFeatureSection",
-                          show_ai_features_section);
+  // Disabled in Ark Browser: Google AI settings are not part of Ark Browser.
+  html_source->AddBoolean("showAiPage", false);
+  html_source->AddBoolean("showAiPageAiFeatureSection", false);
+
+  // Ark Browser: Rename "You and Google" to "Your Profile".
+  html_source->AddString("peoplePageTitle", "Your Profile");
 
   html_source->AddBoolean("replaceSyncPromosWithSignInPromos",
                           syncer::IsReplaceSyncPromosWithSignInPromosEnabled());
@@ -908,10 +901,7 @@ void SettingsUI::UpdateShowGlicState() {
 
   base::DictValue update;
   update.Set("showGlicSettings", show_glic);
-  update.Set("glicDisallowedByAdmin", enablement.DisallowedByAdmin());
-  if (show_glic) {
-    update.Set("showAiPage", true);
-  }
+  update.Set("showAiPage", false);
 
   content::WebUIDataSource::Update(
       web_ui()->GetWebContents()->GetBrowserContext(),

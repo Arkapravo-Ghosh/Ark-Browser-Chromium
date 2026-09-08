@@ -36,10 +36,6 @@ export function getHtml(this: SettingsPeoplePageIndexElement) {
         data-parent-view-id="parent"
         route-path="${this.routes_.ACCOUNT.path}">
     </settings-account-page>
-    <settings-google-services-page slot="view" id="googleServices"
-        data-parent-view-id="parent"
-        route-path="${this.routes_.GOOGLE_SERVICES.path}">
-    </settings-google-services-page>
   ` : ''}
 </cr-view-manager>
 <!--_html_template_end_-->`;

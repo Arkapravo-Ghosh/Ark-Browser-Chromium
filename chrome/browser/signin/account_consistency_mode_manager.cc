@@ -146,7 +146,8 @@ AccountConsistencyModeManager::~AccountConsistencyModeManager() = default;
 // static
 void AccountConsistencyModeManager::RegisterProfilePrefs(
     user_prefs::PrefRegistrySyncable* registry) {
-  registry->RegisterBooleanPref(prefs::kSigninAllowedOnNextStartup, true);
+  // Disabled by default in Ark Browser.
+  registry->RegisterBooleanPref(prefs::kSigninAllowedOnNextStartup, false);
 }
 
 // static

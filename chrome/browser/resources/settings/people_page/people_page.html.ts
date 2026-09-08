@@ -90,21 +90,6 @@ export function getHtml(this: SettingsPeoplePageElement) {
           </div>
         </cr-link-row>
 
-        <cr-link-row id="sync-setup"
-            label="$i18n{syncAndNonPersonalizedServices}"
-            .subLabel="${this.getSyncAndNonPersonalizedServicesSubtext_()}"
-            @click="${this.onSyncClick_}"
-            role-description="$i18n{subpageArrowRoleDescription}"
-            ?hidden="${this.shouldHideSyncSetupLinkRow_()}">
-        </cr-link-row>
-
-        <cr-link-row id="google-services"
-            label="$i18n{googleServicesPageTitle}"
-            @click="${this.onGoogleServicesClick_}"
-            role-description="$i18n{subpageArrowRoleDescription}"
-            ?hidden="${!this.shouldHideSyncSetupLinkRow_()}">
-        </cr-link-row>
-
 <if expr="not is_chromeos">
         ${this.signinAllowed_ ? html`
           <cr-link-row id="manage-google-account"
