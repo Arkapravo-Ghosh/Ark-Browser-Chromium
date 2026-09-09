@@ -16,7 +16,7 @@ import("//ui/webui/webui_features.gni")
 declare_args() {
   # Generating the credits page requires a filesystem traversal for licenses
   # that is slow in some environments.
-  generate_about_credits = is_official_build
+  generate_about_credits = true
 }
 
 buildflag_header("generate_about_credits_header") {

@@ -91,7 +91,7 @@ inline constexpr char kChromeHelpViaKeyboardURL[] =
     "https://support.google.com/chromebook?p=help&ctx=keyboard";
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
 #else
-    "https://support.google.com/chrome?p=help&ctx=keyboard";
+    "https://github.com/Arkapravo-Ghosh/Ark-Browser/issues";
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
 inline constexpr char kChromeHelpViaMenuURL[] =
@@ -102,11 +102,11 @@ inline constexpr char kChromeHelpViaMenuURL[] =
     "https://support.google.com/chromebook?p=help&ctx=menu";
 #endif  // BUILDFLAG(GOOGLE_CHROME_BRANDING)
 #else
-    "https://support.google.com/chrome?p=help&ctx=menu";
+    "https://github.com/Arkapravo-Ghosh/Ark-Browser/issues";
 #endif  // BUILDFLAG(IS_CHROMEOS)
 
 inline constexpr char kChromeHelpViaWebUIURL[] =
-    "https://support.google.com/chrome?p=help&ctx=settings";
+    "https://github.com/Arkapravo-Ghosh/Ark-Browser/issues";
 #if BUILDFLAG(IS_CHROMEOS)
 inline constexpr char kChromeOsHelpViaWebUIURL[] =
 #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
