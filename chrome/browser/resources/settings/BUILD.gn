@@ -12,6 +12,7 @@ build_webui("build") {
   grd_prefix = "settings"
 
   static_files = [
+    "images/ark_logo.svg",
     "images/cvc.svg",
     "images/cvc_amex.svg",
     "images/gemini_spark.svg",

@@ -414,24 +414,6 @@ void ToolbarView::Init() {
   }
 #endif
 
-  // Always add children in order from left to right, for accessibility.
-  // Ark owns the extreme-left product entry point, immediately before Back.
-  if (base::FeatureList::IsEnabled(ark::kArkUI)) {
-    ark_ai_button_ =
-        AddChildView(std::make_unique<ToolbarButton>(base::BindRepeating(
-            [](BrowserWindowInterface* browser, const ui::Event&) {
-              if (auto* side_panel = SidePanelUI::From(browser)) {
-                side_panel->Toggle(SidePanelEntryKey(SidePanelEntryId::kArkAi),
-                                   SidePanelOpenTrigger::kToolbarButton);
-              }
-            },
-            browser_)));
-    ark_ai_button_->SetVectorIcon(kArkAiIcon);
-    ark_ai_button_->SetTooltipText(l10n_util::GetStringUTF16(IDS_ARK_AI_TITLE));
-    ark_ai_button_->GetViewAccessibility().SetName(
-        l10n_util::GetStringUTF16(IDS_ARK_AI_TITLE));
-  }
-
   if (!features::IsWebUIBackForwardButtonEnabled()) {
     back_ = AddChildView(std::make_unique<BackForwardButton>(
         BackForwardButton::Direction::kBack,
@@ -631,6 +613,24 @@ void ToolbarView::Init() {
       contextual_tasks::GetExpandButtonOption() ==
           contextual_tasks::ExpandButtonOption::kToolbarCloseButton) {
     AddChildView(std::make_unique<ContextualTasksCloseTabButton>(browser_));
+  }
+
+  // Ark AI sidebar toggle button sits at the extreme right of the toolbar,
+  // directly adjacent to the right-docked AI sidebar.
+  if (base::FeatureList::IsEnabled(ark::kArkUI)) {
+    ark_ai_button_ =
+        AddChildView(std::make_unique<ToolbarButton>(base::BindRepeating(
+            [](BrowserWindowInterface* browser, const ui::Event&) {
+              if (auto* side_panel = SidePanelUI::From(browser)) {
+                side_panel->Toggle(SidePanelEntryKey(SidePanelEntryId::kArkAi),
+                                   SidePanelOpenTrigger::kToolbarButton);
+              }
+            },
+            browser_)));
+    ark_ai_button_->SetVectorIcon(kArkAiIcon);
+    ark_ai_button_->SetTooltipText(l10n_util::GetStringUTF16(IDS_ARK_AI_TITLE));
+    ark_ai_button_->GetViewAccessibility().SetName(
+        l10n_util::GetStringUTF16(IDS_ARK_AI_TITLE));
   }
 
   LoadImages();

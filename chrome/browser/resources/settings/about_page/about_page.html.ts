@@ -14,9 +14,9 @@ export function getHtml(this: SettingsAboutPageElement) {
 <settings-section page-title="$i18n{aboutPageTitle}">
   <div class="cr-row two-line first">
     <img id="productLogo" @click="${this.onProductLogoClick_}"
-        srcset="chrome://theme/current-channel-logo@1x 1x,
-                chrome://theme/current-channel-logo@2x 2x"
+        src="images/ark_logo.svg"
         alt="$i18n{aboutProductLogoAlt}"
+        width="32" height="32"
         role="presentation">
     <div class="product-title">$i18n{aboutProductTitle}</div>
   </div>

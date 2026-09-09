@@ -979,12 +979,10 @@ void ProfileMenuView::MaybeBuildChromeAccountSettingsButtonWithSync() {
     return;
   }
 
-  // Show the settings button when signed in to Chrome or to the web, or if
-  // signin is disallowed.
+  // Show the settings button only when signed in with an active account.
   const bool should_show_settings_button =
       !identity_manager->GetExtendedAccountInfoForAccountsWithRefreshToken()
-           .empty() ||
-      !profile().GetPrefs()->GetBoolean(prefs::kSigninAllowed);
+           .empty();
   if (!should_show_settings_button) {
     return;
   }
@@ -1010,27 +1008,8 @@ void ProfileMenuView::MaybeBuildChromeAccountSettingsButtonWithSync() {
 }
 
 void ProfileMenuView::MaybeBuildGoogleServicesSettingsButton() {
-  CHECK(!profile().IsGuestSession());
-
-  signin::IdentityManager* identity_manager =
-      IdentityManagerFactory::GetForProfile(&profile());
-
-  if (!identity_manager) {
-    return;
-  }
-
-  // Show the services settings button  if signin is disallowed.
-  if (profile().GetPrefs()->GetBoolean(prefs::kSigninAllowed)) {
-    return;
-  }
-  AddFeatureButton(
-      l10n_util::GetStringUTF16(IDS_PROFILE_MENU_OPEN_ACCOUNT_SETTINGS),
-      base::BindRepeating(
-          &ProfileMenuView::OnGoogleServicesSettingsButtonClicked,
-          base::Unretained(this)),
-      features::IsRoundedIconsEnabled()
-          ? vector_icons::kSettingsIcon
-          : vector_icons::kSettingsChromeRefreshOldIcon);
+  // Google services settings are disabled in Ark Browser.
+  return;
 }
 
 void ProfileMenuView::MaybeBuildManageGoogleAccountButton() {
