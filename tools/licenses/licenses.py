@@ -1177,8 +1177,8 @@ def GenerateCredits(args, metadatas):
   reciprocal_contents = EvaluateTemplate(
     reciprocal_template,
     {
-      'opensource_project': 'Chromium',
-      'opensource_link': 'https://source.chromium.org/chromium',
+      'opensource_project': 'Ark Browser',
+      'opensource_link': 'https://github.com/Arkapravo-Ghosh/Ark-Browser',
     },
     escape=False,
   )

@@ -42,6 +42,10 @@ const decltype(kDynamicCustomizeChromeColors) kDynamicCustomizeChromeColors =
     std::array<DynamicColorInfo, 13>{
         // ID 0 reserved for other colors.
         // ID 1 reserved for grayscale theme.
+        DynamicColorInfo(/*id=*/7,
+                         SkColorSetRGB(135, 186, 129),
+                         IDS_NTP_COLORS_VIRIDIAN,
+                         ui::mojom::BrowserColorVariant::kNeutral),
         DynamicColorInfo(/*id=*/2,
                          SkColorSetRGB(140, 171, 228),
                          IDS_NTP_COLORS_BLUE,
@@ -62,10 +66,6 @@ const decltype(kDynamicCustomizeChromeColors) kDynamicCustomizeChromeColors =
                          SkColorSetRGB(0, 255, 0),
                          IDS_NTP_COLORS_GREEN,
                          ui::mojom::BrowserColorVariant::kTonalSpot),
-        DynamicColorInfo(/*id=*/7,
-                         SkColorSetRGB(135, 186, 129),
-                         IDS_NTP_COLORS_VIRIDIAN,
-                         ui::mojom::BrowserColorVariant::kNeutral),
         DynamicColorInfo(/*id=*/8,
                          SkColorSetRGB(250, 223, 115),
                          IDS_NTP_COLORS_CITRON,

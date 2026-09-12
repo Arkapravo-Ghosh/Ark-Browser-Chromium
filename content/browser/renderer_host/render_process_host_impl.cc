@@ -4882,6 +4882,12 @@ RenderProcessHost::FilterURLResult RenderProcessHostImpl::FilterURL(
     return FilterURLResult::kAllowed;
   }
 
+  if (url->SchemeIs("ark")) {
+    GURL::Replacements replacements;
+    replacements.SetSchemeStr(content::kChromeUIScheme);
+    *url = url->ReplaceComponents(replacements);
+  }
+
   if (!url->is_valid()) {
     // Have to use about:blank for the denied case, instead of an empty GURL.
     // This is because the browser treats navigation to an empty GURL as a

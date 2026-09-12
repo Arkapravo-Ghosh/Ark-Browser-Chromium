@@ -12,17 +12,16 @@ export function getHtml(this: ThemeColorPickerElement) {
 <!-- TODO(crbug.com/40881996): Make grid adaptive. -->
 <cr-grid columns="${this.columns}" role="radiogroup"
     aria-label="${this.i18n('colorsContainerLabel')}">
-  <cr-theme-color id="defaultColor"
-      .backgroundColor="${this.defaultColor_.background}"
-      .baseColor="${this.defaultColor_.base}"
-      .foregroundColor="${this.defaultColor_.foreground}"
-      title="${this.i18n('defaultColorName')}"
-      aria-label="${this.i18n('defaultColorName')}" role="radio"
-      ?checked="${this.isDefaultColorSelected_}"
-      aria-checked="${this.isDefaultColorSelected_}"
-      tabindex="${this.tabIndex_(this.isDefaultColorSelected_)}"
-      @click="${this.onDefaultColorClick_}">
-  </cr-theme-color>
+  ${this.colors_.slice(0, 1).map((item) => html`
+    <cr-theme-color class="chrome-color" .backgroundColor="${item.background}"
+        .baseColor="${item.base}" .foregroundColor="${item.foreground}"
+        title="${item.name}" aria-label="${item.name}" role="radio"
+        ?checked="${this.isChromeColorSelected_(item.seed, item.variant)}"
+        aria-checked="${this.isChromeColorSelected_(item.seed, item.variant)}"
+        tabindex="${this.chromeColorTabIndex_(item.seed, item.variant)}"
+        data-index="0" @click="${this.onChromeColorClick_}">
+    </cr-theme-color>
+  `)}
   <cr-theme-color id="greyDefaultColor"
       .backgroundColor="${this.greyDefaultColor_.background}"
       .baseColor="${this.greyDefaultColor_.base}"
@@ -34,14 +33,35 @@ export function getHtml(this: ThemeColorPickerElement) {
       tabindex="${this.tabIndex_(this.isGreyDefaultColorSelected_)}"
       @click="${this.onGreyDefaultColorClick_}">
   </cr-theme-color>
-  ${this.colors_.map((item, index) => html`
+  ${this.colors_.slice(1, 6).map((item, i) => html`
     <cr-theme-color class="chrome-color" .backgroundColor="${item.background}"
         .baseColor="${item.base}" .foregroundColor="${item.foreground}"
         title="${item.name}" aria-label="${item.name}" role="radio"
         ?checked="${this.isChromeColorSelected_(item.seed, item.variant)}"
         aria-checked="${this.isChromeColorSelected_(item.seed, item.variant)}"
         tabindex="${this.chromeColorTabIndex_(item.seed, item.variant)}"
-        data-index="${index}" @click="${this.onChromeColorClick_}">
+        data-index="${i + 1}" @click="${this.onChromeColorClick_}">
+    </cr-theme-color>
+  `)}
+  <cr-theme-color id="defaultColor"
+      .backgroundColor="${this.defaultColor_.background}"
+      .baseColor="${this.defaultColor_.base}"
+      .foregroundColor="${this.defaultColor_.foreground}"
+      title="${this.i18n('defaultColorName')}"
+      aria-label="${this.i18n('defaultColorName')}" role="radio"
+      ?checked="${this.isDefaultColorSelected_}"
+      aria-checked="${this.isDefaultColorSelected_}"
+      tabindex="${this.tabIndex_(this.isDefaultColorSelected_)}"
+      @click="${this.onDefaultColorClick_}">
+  </cr-theme-color>
+  ${this.colors_.slice(6).map((item, i) => html`
+    <cr-theme-color class="chrome-color" .backgroundColor="${item.background}"
+        .baseColor="${item.base}" .foregroundColor="${item.foreground}"
+        title="${item.name}" aria-label="${item.name}" role="radio"
+        ?checked="${this.isChromeColorSelected_(item.seed, item.variant)}"
+        aria-checked="${this.isChromeColorSelected_(item.seed, item.variant)}"
+        tabindex="${this.chromeColorTabIndex_(item.seed, item.variant)}"
+        data-index="${i + 6}" @click="${this.onChromeColorClick_}">
     </cr-theme-color>
   `)}
   <cr-theme-color id="customColor"
