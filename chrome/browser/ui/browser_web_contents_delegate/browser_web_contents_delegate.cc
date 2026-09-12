@@ -10,6 +10,7 @@
 #include "base/trace_event/trace_event.h"
 #include "chrome/app/chrome_command_ids.h"
 #include "chrome/browser/actor/actor_util.h"
+#include "chrome/browser/ark/ark_features.h"
 #include "chrome/browser/background/background_contents.h"
 #include "chrome/browser/background/background_contents_service.h"
 #include "chrome/browser/background/background_contents_service_factory.h"
@@ -56,6 +57,7 @@
 #include "chrome/browser/web_applications/web_app_tab_helper.h"
 #include "chrome/browser/web_applications/web_app_utils.h"
 #include "chrome/common/webui_url_constants.h"
+#include "chrome/common/ark_url_constants.h"
 #include "components/blocked_content/popup_blocker.h"
 #include "components/blocked_content/popup_tracker.h"
 #include "components/content_settings/core/browser/host_content_settings_map.h"
@@ -797,6 +799,17 @@ void BrowserWebContentsDelegate::SetContentsBounds(content::WebContents* source,
 
 void BrowserWebContentsDelegate::UpdateTargetURL(content::WebContents* source,
                                                  const GURL& url) {
+  // Normalize chrome:// target URLs to the user-facing ark:// alias so the
+  // status bubble never exposes internal WebUI origins on hover.
+  GURL display_url = url;
+  if (display_url.SchemeIs(content::kChromeUIScheme)) {
+    GURL::Replacements replacements;
+    replacements.SetSchemeStr(ark::kUIScheme);
+    if (display_url.host() == ark::kArkChatHost) {
+      replacements.SetHostStr(chrome::kChromeUINewTabHost);
+    }
+    display_url = display_url.ReplaceComponents(replacements);
+  }
   std::vector<StatusBubble*> status_bubbles =
       browser_ui_controller_->GetStatusBubbles();
   for (StatusBubble* status_bubble : status_bubbles) {
@@ -805,7 +818,7 @@ void BrowserWebContentsDelegate::UpdateTargetURL(content::WebContents* source,
     ContentsWebView* anchor =
         static_cast<ContentsWebView*>(status_bubble_views->base_view());
     if (source == anchor->GetWebContents()) {
-      status_bubble->SetURL(url);
+      status_bubble->SetURL(display_url);
       break;
     }
   }
