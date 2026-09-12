@@ -13,9 +13,9 @@ export function getHtml(this: PolicyTableElement) {
   <h2 class="header" id="policy-header">
     ${this.dataModel?.name}
     ${this.dataModel?.id === 'updater' ? html`
-      <a href="chrome://updater" class="updater-link" target="_blank"
+      <a href="ark://updater" class="updater-link" target="_blank"
           rel="noopener noreferrer">
-        (chrome://updater)
+        (ark://updater)
       </a>
     ` : ''}
   </h2>

@@ -9,11 +9,11 @@ import type {ChromeUrlsAppElement} from './app.js';
 export function getHtml(this: ChromeUrlsAppElement) {
   // clang-format off
   return html`
-<h2>List of Chrome URLs</h2>
+<h2>List of Ark URLs</h2>
 <ul>
   ${this.webuiUrlInfos_.map(info => html`
     ${this.isChromeUrlsUrl_(info) ?
-      html`<li><a href="#">chrome://chrome-urls</a></li>` :
+      html`<li><a href="#">ark://chrome-urls</a></li>` :
       html`${info.enabled ?
         html`<li><a href="${info.url}">${info.url}</a></li>` :
         html`<li>${info.url}</li>`

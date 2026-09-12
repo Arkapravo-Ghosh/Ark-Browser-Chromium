@@ -517,7 +517,7 @@ export class ManagementUiElement extends ManagementUiElementBase {
     if (history.length > 1) {
       history.back();
     } else {
-      window.location.href = 'chrome://settings/help';
+      window.location.href = 'ark://settings/help';
     }
   }
   // </if>

@@ -118,7 +118,7 @@
 <translation id="4746179598275229723">Extension unpinned</translation>
 <translation id="4788285488841504513">{MONTHS,plural, =1{1 month left}other{# months left}}</translation>
 <translation id="4816695657735045067">{COUNT,plural, =1{To use Incognito, your organisation requires an extension}other{To use Incognito, your organisation requires some extensions}}</translation>
-<translation id="482932175346970750">Type <ph name="BEGIN_BOLD" />chrome://extensions<ph name="END_BOLD" /> into your browser</translation>
+<translation id="482932175346970750">Type <ph name="BEGIN_BOLD" />ark://extensions<ph name="END_BOLD" /> into your browser</translation>
 <translation id="4888938634149558681">Make call</translation>
 <translation id="4895877746940133817"><ph name="TYPE_1" />, <ph name="TYPE_2" />, <ph name="TYPE_3" /></translation>
 <translation id="4968171027979920686">{SECONDS,plural, =1{1 second}other{# seconds}}</translation>

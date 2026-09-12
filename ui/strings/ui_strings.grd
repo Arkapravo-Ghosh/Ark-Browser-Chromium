@@ -1119,7 +1119,7 @@ need to be translated for each locale.-->
         Turn on an extension in Incognito:
       </message>
       <message name="IDS_INCOGNITO_NAVIGATION_INSTRUCTIONS_STEP_1" desc="First step from the instruction to enable an extension in Incognito mode">
-        Type <ph name="BEGIN_BOLD">&lt;b&gt;</ph>chrome://extensions<ph name="END_BOLD">&lt;/b&gt;</ph> into your browser
+        Type <ph name="BEGIN_BOLD">&lt;b&gt;</ph>ark://extensions<ph name="END_BOLD">&lt;/b&gt;</ph> into your browser
       </message>
       <message name="IDS_INCOGNITO_NAVIGATION_INSTRUCTIONS_STEP_2" desc="Second step from the instruction to enable an extension in Incognito mode">
         Find the extension above

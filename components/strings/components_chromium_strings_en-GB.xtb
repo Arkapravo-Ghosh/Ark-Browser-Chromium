@@ -34,13 +34,13 @@
           &gt;
           Network and Internet &gt; Proxy
           and deselect 'Automatically detect settings'.</translation>
-<translation id="648062525172759633">These pages are intended for use by Chromium developers, and may not be actively maintained or tested. To enable them, navigate to <ph name="BEGIN_LINK" />chrome://chrome-urls<ph name="LINK_END" />, click the button to enable debug pages and then navigate to this page again.</translation>
-<translation id="6549378540556750549">Chromium is also made possible by other <ph name="BEGIN_LINK_OSS" />open-source software<ph name="END_LINK_OSS" />.</translation>
-<translation id="6613594504749178791">Your changes will take effect the next time you relaunch Chromium.</translation>
-<translation id="691026815377248078">Chromium needs Bluetooth access to continue pairing. <ph name="IDS_BLUETOOTH_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK" /></translation>
-<translation id="7681937895330411637">Chromium is made possible by the <ph name="BEGIN_LINK_CHROMIUM" />Chromium<ph name="END_LINK_CHROMIUM" /> open-source project.</translation>
+<translation id="648062525172759633">These pages are intended for use by Chromium developers, and may not be actively maintained or tested. To enable them, navigate to <ph name="BEGIN_LINK" />ark://chrome-urls<ph name="LINK_END" />, click the button to enable debug pages and then navigate to this page again.</translation>
+<translation id="6549378540556750549">Ark Browser is also made possible by other <ph name="BEGIN_LINK_OSS" />open-source software<ph name="END_LINK_OSS" />.</translation>
+<translation id="6613594504749178791">Your changes will take effect the next time you relaunch Ark Browser.</translation>
+<translation id="691026815377248078">Ark Browser needs Bluetooth access to continue pairing. <ph name="IDS_BLUETOOTH_DEVICE_CHOOSER_AUTHORIZE_BLUETOOTH_LINK" /></translation>
+<translation id="7681937895330411637">Ark Browser is made possible by the <ph name="BEGIN_LINK_CHROMIUM" />Chromium<ph name="END_LINK_CHROMIUM" /> open-source project.</translation>
 <translation id="7861509383340276692">Go to
-          the Chromium menu &gt;
+          the Ark Browser menu &gt;
           <ph name="SETTINGS_TITLE" />
           &gt;
           <ph name="ADVANCED_TITLE" />
@@ -48,6 +48,6 @@
           If this does not resolve the issue, we recommend selecting this option
           again for improved performance.</translation>
 <translation id="8597726643333341451">You're viewing a secure Chrome for testing page</translation>
-<translation id="8684913864886094367">Chromium didn't shut down correctly.</translation>
-<translation id="9183331186620388872">Chromium tip: Search with Lens</translation>
+<translation id="8684913864886094367">Ark Browser didn't shut down correctly.</translation>
+<translation id="9183331186620388872">Ark Browser tip: Search with Lens</translation>
 </translationbundle>

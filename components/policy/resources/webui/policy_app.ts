@@ -246,7 +246,7 @@ export class PolicyAppElement extends CrLitElement {
 
   protected onViewLogsClick_() {
     this.closeActionMenu_();
-    window.location.href = 'chrome://policy/logs';
+    window.location.href = 'ark://policy/logs';
   }
 
   protected onShowUnsetCheckedChanged_(e: CustomEvent<{value: boolean}>) {

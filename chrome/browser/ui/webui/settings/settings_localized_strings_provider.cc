@@ -352,7 +352,7 @@ void AddAboutStrings(content::WebUIDataSource* html_source, Profile* profile) {
 
   std::u16string license = l10n_util::GetStringFUTF16(
       IDS_VERSION_UI_LICENSE, chrome::kChromiumProjectURL,
-      chrome::kChromeUICreditsURL16,
+      u"ark://credits/",
       l10n_util::GetStringUTF16(IDS_SETTINGS_OPENS_IN_NEW_TAB));
   html_source->AddString("aboutProductLicense", license);
 
@@ -546,7 +546,7 @@ void AddAiStrings(content::WebUIDataSource* html_source) {
   html_source->AddString("historySearchLearnMoreManagedUrl",
                          chrome::kHistorySearchLearnMorePageManagedURL);
   html_source->AddString("historySearchDataHomeUrl",
-                         chrome::kChromeUIHistoryURL);
+                         "ark://history");
   html_source->AddString("composeLearnMorePageURL",
                          chrome::kComposeLearnMorePageURL);
   html_source->AddString("composeLearnMorePageManagedURL",

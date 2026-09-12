@@ -67,7 +67,7 @@ export class ExtensionControlledMessageElement extends
   }
 
   private onManageClick_() {
-    const manageUrl = 'chrome://extensions/?id=' + this.extensionId;
+    const manageUrl = 'ark://extensions/?id=' + this.extensionId;
     OpenWindowProxyImpl.getInstance().openUrl(manageUrl);
   }
 

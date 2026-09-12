@@ -10,7 +10,7 @@ export function getHtml(this: EnterprisePolicyTableElement) {
   // clang-format off
   return html`
 <!--_html_template_start_-->
-<a href="chrome://policy" target="_blank" rel="noopener noreferrer">
+<a href="ark://policy" target="_blank" rel="noopener noreferrer">
   <cr-button id="view-policies-button">
     $i18n{viewAllChromePolicies}
   </cr-button>
