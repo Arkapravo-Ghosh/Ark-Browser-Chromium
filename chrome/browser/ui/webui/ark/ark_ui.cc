@@ -15,6 +15,7 @@
 #include "chrome/browser/ark/ark_ai_service.h"
 #include "chrome/browser/ark/ark_ai_service_factory.h"
 #include "chrome/browser/ark/ark_features.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/browser/autocomplete/autocomplete_classifier_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/search_engines/template_url_service_factory.h"
@@ -118,8 +119,11 @@ void ArkUI::Navigate(const std::string& input, NavigateCallback callback) {
                        metrics::OmniboxEventProto::NTP, &match, nullptr);
   // Never execute script/data URLs, open local files, or dispatch external
   // protocols from this renderer-originated input.
-  if (!match.destination_url.is_valid() ||
-      !match.destination_url.SchemeIsHTTPOrHTTPS()) {
+  const bool is_allowed_scheme =
+      match.destination_url.SchemeIsHTTPOrHTTPS() ||
+      match.destination_url.SchemeIs(ark::kUIScheme) ||
+      match.destination_url.SchemeIs(content::kChromeUIScheme);
+  if (!match.destination_url.is_valid() || !is_allowed_scheme) {
     std::move(callback).Run(false);
     return;
   }

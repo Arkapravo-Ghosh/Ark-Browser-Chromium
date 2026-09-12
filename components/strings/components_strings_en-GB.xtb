@@ -2410,7 +2410,7 @@ To hide pay later options, go to <ph name="BEGIN_LINK" />payment settings<ph nam
 <translation id="5061227663725596739">Did you mean <ph name="LOOKALIKE_DOMAIN" />?</translation>
 <translation id="5066056036849835175">Printing history</translation>
 <translation id="5068524481479508725">A10</translation>
-<translation id="5068915318814087203">Certain browsing activity may be monitored by your organisation to prevent data loss; go to <ph name="BEGIN_LINK" />chrome://management<ph name="END_LINK" /> for more details</translation>
+<translation id="5068915318814087203">Certain browsing activity may be monitored by your organisation to prevent data loss; go to <ph name="BEGIN_LINK" />ark://management<ph name="END_LINK" /> for more details</translation>
 <translation id="5070335125961472645"><ph name="BEGIN_LINK" />Checking the proxy address<ph name="END_LINK" /></translation>
 <translation id="5070838744279127212">Tenth roll</translation>
 <translation id="507130231501693183">Mailbox 4</translation>
@@ -3528,7 +3528,7 @@ To hide pay later options, go to <ph name="BEGIN_LINK" />payment settings<ph nam
 <translation id="6972867931824045907">To use your Clipboard, give Chrome access in <ph name="LINK" />.</translation>
 <translation id="6973656660372572881">Both fixed proxy servers and a .pac script URL are specified.</translation>
 <translation id="6973988895180423160">3.5 in x 5.0 in</translation>
-<translation id="6976229914347655621">Extensions required by your organisation will remain turned on; go to <ph name="BEGIN_LINK" />chrome://extensions<ph name="END_LINK" /> for more details</translation>
+<translation id="6976229914347655621">Extensions required by your organisation will remain turned on; go to <ph name="BEGIN_LINK" />ark://extensions<ph name="END_LINK" /> for more details</translation>
 <translation id="6978236010531171013">Share anyway</translation>
 <translation id="6979158407327259162">Google Drive</translation>
 <translation id="6979440798594660689">Mute (default)</translation>

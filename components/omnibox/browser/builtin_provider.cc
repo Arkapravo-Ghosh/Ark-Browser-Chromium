@@ -52,22 +52,29 @@ void BuiltinProvider::DoBuiltinAutocompletion(const std::u16string& text) {
   const std::u16string embedderAbout = base::StrCat(
       {base::UTF8ToUTF16(client_->GetEmbedderRepresentationOfAboutScheme()),
        url::kStandardSchemeSeparator16});
+  const std::u16string kChrome = u"chrome://";
 
   const int kUrl = ACMatchClassification::URL;
   const int kMatch = kUrl | ACMatchClassification::MATCH;
 
   bool starting_about = base::StartsWith(embedderAbout, text,
                                          base::CompareCase::INSENSITIVE_ASCII);
-  if (starting_about ||
+  bool starting_chrome = base::StartsWith(kChrome, text,
+                                          base::CompareCase::INSENSITIVE_ASCII);
+  if (starting_about || starting_chrome ||
       base::StartsWith(kAbout, text, base::CompareCase::INSENSITIVE_ASCII)) {
     // Highlight the input portion matching |embedderAbout|; or if the user
     // has input "about:" (with optional slashes), highlight the whole
     // |embedderAbout|.
     TermMatches style_matches;
-    if (starting_about)
+    if (starting_about) {
       style_matches.emplace_back(0, 0, text.length());
-    else if (text.length() > kAboutSchemeLength)
+    } else if (starting_chrome) {
+      style_matches.emplace_back(0, 0,
+                                 std::min(text.length(), embedderAbout.length()));
+    } else if (text.length() > kAboutSchemeLength) {
       style_matches.emplace_back(0, 0, embedderAbout.length());
+    }
     ACMatchClassifications styles =
         ClassifyTermMatches(style_matches, std::string::npos, kMatch, kUrl);
     // Include some common builtin URLs as the user types the scheme.
@@ -82,7 +89,8 @@ void BuiltinProvider::DoBuiltinAutocompletion(const std::u16string& text) {
         base::EndsWith(text, u"/", base::CompareCase::SENSITIVE);
     // BuiltinProvider doesn't know how to suggest valid ?query or #fragment
     // extensions to builtin URLs.
-    if (url.SchemeIs(client_->GetEmbedderRepresentationOfAboutScheme()) &&
+    if ((url.SchemeIs(client_->GetEmbedderRepresentationOfAboutScheme()) ||
+         url.SchemeIs("chrome")) &&
         url.has_host() && !url.has_query() && !url.has_ref()) {
       // Suggest about:blank for substrings, taking URL fixup into account.
       // Chrome does not support trailing slashes or paths for about:blank.
@@ -119,12 +127,16 @@ void BuiltinProvider::DoBuiltinAutocompletion(const std::u16string& text) {
           // Ensure that in that case, we don't inline autocomplete unless the
           // autocompletion restores the slash.  This prevents us from e.g.
           // trying to add a 'y' to an input like "chrome://histor/".
-          std::u16string inline_autocompletion(
-              match_string.substr(match_length));
-          if (text_ends_with_slash &&
-              !base::StartsWith(match_string.substr(match_length), u"/",
-                                base::CompareCase::INSENSITIVE_ASCII))
-            inline_autocompletion = std::u16string();
+          std::u16string inline_autocompletion;
+          if (base::StartsWith(match_string, text,
+                               base::CompareCase::INSENSITIVE_ASCII)) {
+            inline_autocompletion = match_string.substr(text.length());
+            if (text_ends_with_slash &&
+                !base::StartsWith(inline_autocompletion, u"/",
+                                  base::CompareCase::INSENSITIVE_ASCII)) {
+              inline_autocompletion = std::u16string();
+            }
+          }
           AddBuiltinMatch(match_string, inline_autocompletion, styles);
         }
       }

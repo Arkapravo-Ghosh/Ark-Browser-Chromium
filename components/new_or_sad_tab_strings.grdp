@@ -213,7 +213,7 @@
         Activity monitoring
       </message>
       <message name="IDS_NEW_ISOLATED_TAB_ACTIVITY_MONITORING_CONTENT" desc="Description for the activity monitoring card in Isolated mode.">
-        Certain browsing activity may be monitored by your organization to prevent data loss; go to <ph name="BEGIN_LINK">&lt;a href="chrome://management"&gt;</ph>chrome://management<ph name="END_LINK">&lt;/a&gt;</ph> for more details
+        Certain browsing activity may be monitored by your organization to prevent data loss; go to <ph name="BEGIN_LINK">&lt;a href="ark://management"&gt;</ph>ark://management<ph name="END_LINK">&lt;/a&gt;</ph> for more details
       </message>
       <message name="IDS_NEW_ISOLATED_TAB_BROWSING_DATA_TITLE" desc="Title for the browsing data card in Isolated mode.">
         Browsing data
@@ -225,7 +225,7 @@
         Extensions
       </message>
       <message name="IDS_NEW_ISOLATED_TAB_EXTENSIONS_CONTENT" desc="Description for the extensions card in Isolated mode.">
-        Extensions required by your organization will remain turned on; go to <ph name="BEGIN_LINK">&lt;a href="chrome://extensions"&gt;</ph>chrome://extensions<ph name="END_LINK">&lt;/a&gt;</ph> for more details
+        Extensions required by your organization will remain turned on; go to <ph name="BEGIN_LINK">&lt;a href="ark://extensions"&gt;</ph>ark://extensions<ph name="END_LINK">&lt;/a&gt;</ph> for more details
       </message>
       <message name="IDS_NEW_ISOLATED_TAB_THIRD_PARTY_COOKIES_TITLE" desc="Title for the third-party cookies card in Isolated mode.">
         Third-party cookies

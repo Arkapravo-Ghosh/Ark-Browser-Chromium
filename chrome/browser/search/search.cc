@@ -428,7 +428,7 @@ bool HandleNewTabURLReverseRewrite(GURL* url,
 
   if (base::FeatureList::IsEnabled(ark::kArkUI) &&
       *url == GURL(ark::kArkNewTabURL)) {
-    *url = chrome::ChromeUINewTabURLAsGURL();
+    *url = GURL("ark://newtab/");
     return true;
   }
 

@@ -9,6 +9,7 @@
 #include "chrome/browser/history/history_service_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/search_engines/template_url_service_factory.h"
+#include "chrome/common/ark_url_constants.h"
 #include "components/bookmarks/browser/bookmark_model.h"
 #include "components/keyed_service/core/service_access_type.h"
 #include "components/omnibox/browser/in_memory_url_index.h"
@@ -52,6 +53,7 @@ InMemoryURLIndexFactory::BuildServiceInstanceForBrowserContext(
   Profile* profile = Profile::FromBrowserContext(context);
   SchemeSet chrome_schemes_to_whitelist;
   chrome_schemes_to_whitelist.insert(content::kChromeUIScheme);
+  chrome_schemes_to_whitelist.insert(ark::kUIScheme);
   std::unique_ptr<InMemoryURLIndex> in_memory_url_index =
       std::make_unique<InMemoryURLIndex>(
           BookmarkModelFactory::GetForBrowserContext(profile),

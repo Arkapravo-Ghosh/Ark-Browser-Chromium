@@ -17,6 +17,7 @@
 #include "base/strings/utf_string_conversions.h"
 #include "build/build_config.h"
 #include "chrome/app/chrome_command_ids.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/browser/autocomplete/aim_eligibility_service_factory.h"
 #include "chrome/browser/autocomplete/autocomplete_classifier_factory.h"
 #include "chrome/browser/autocomplete/autocomplete_scoring_model_service_factory.h"
@@ -421,7 +422,7 @@ std::string ChromeAutocompleteProviderClient::GetAcceptLanguages() const {
 std::string
 ChromeAutocompleteProviderClient::GetEmbedderRepresentationOfAboutScheme()
     const {
-  return content::kChromeUIScheme;
+  return ark::kUIScheme;
 }
 
 std::vector<std::u16string> ChromeAutocompleteProviderClient::GetBuiltinURLs() {
@@ -453,12 +454,12 @@ std::vector<std::u16string> ChromeAutocompleteProviderClient::GetBuiltinURLs() {
 std::vector<std::u16string>
 ChromeAutocompleteProviderClient::GetBuiltinsToProvideAsUserTypes() {
   std::vector<std::u16string> builtins_to_provide;
-  builtins_to_provide.push_back(chrome::kChromeUIChromeURLsURL16);
-  builtins_to_provide.push_back(chrome::kChromeUIFlagsURL16);
+  builtins_to_provide.push_back(u"ark://chrome-urls");
+  builtins_to_provide.push_back(u"ark://flags");
 #if !BUILDFLAG(IS_ANDROID)
-  builtins_to_provide.push_back(chrome::kChromeUISettingsURL16);
+  builtins_to_provide.push_back(u"ark://settings");
 #endif
-  builtins_to_provide.push_back(chrome::kChromeUIVersionURL16);
+  builtins_to_provide.push_back(u"ark://version");
   return builtins_to_provide;
 }
 

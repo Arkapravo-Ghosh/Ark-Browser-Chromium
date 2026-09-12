@@ -62,6 +62,7 @@
 #include "chrome/browser/after_startup_task_utils.h"
 #include "chrome/browser/ai/ai_manager.h"
 #include "chrome/browser/app_mode/app_mode_utils.h"
+#include "chrome/browser/ark/ark_features.h"
 #include "chrome/browser/back_forward_cache/back_forward_cache_util.h"
 #include "chrome/browser/bad_message.h"
 #include "chrome/browser/battery/battery_saver.h"
@@ -5053,6 +5054,11 @@ bool HandleArkURLReverseRewrite(GURL* url,
                                content::BrowserContext* browser_context) {
   if (!url->SchemeIs(content::kChromeUIScheme)) {
     return false;
+  }
+  if (base::FeatureList::IsEnabled(ark::kArkUI) &&
+      *url == GURL(ark::kArkNewTabURL)) {
+    *url = GURL("ark://newtab/");
+    return true;
   }
   GURL::Replacements replacements;
   replacements.SetSchemeStr(ark::kUIScheme);

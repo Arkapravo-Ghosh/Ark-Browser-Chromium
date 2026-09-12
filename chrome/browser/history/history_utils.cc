@@ -4,6 +4,7 @@
 
 #include "chrome/browser/history/history_utils.h"
 
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/common/url_constants.h"
 #include "components/dom_distiller/core/url_constants.h"
 #include "url/gurl.h"
@@ -20,6 +21,7 @@ bool CanAddURLToHistory(const GURL& url) {
       url.SchemeIs(url::kContentScheme) ||
       url.SchemeIs(content::kChromeDevToolsScheme) ||
       url.SchemeIs(content::kChromeUIScheme) ||
+      url.SchemeIs(ark::kUIScheme) ||
       url.SchemeIs(content::kChromeUIUntrustedScheme) ||
       url.SchemeIs(content::kViewSourceScheme) ||
       url.SchemeIs(chrome::kChromeNativeScheme) ||

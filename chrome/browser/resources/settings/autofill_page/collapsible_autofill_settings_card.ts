@@ -42,7 +42,7 @@ import {getTemplate} from './collapsible_autofill_settings_card.html.js';
 
 export interface CollapsibleCardElement {
   $: {
-    optInToggle: SettingsToggleButtonElement,
+    optInToggle?: SettingsToggleButtonElement,
   };
 }
 
@@ -175,6 +175,9 @@ export class CollapsibleCardElement extends SettingsViewMixin
   }
 
   private async onOptInToggleChange_() {
+    if (!this.$.optInToggle) {
+      return;
+    }
     // `setOptInStatus` returns false when the user tries to toggle the opt-in
     // status when they're ineligible.  This shouldn't happen usually but in
     // some cases it can happen (see crbug.com/408145195).
