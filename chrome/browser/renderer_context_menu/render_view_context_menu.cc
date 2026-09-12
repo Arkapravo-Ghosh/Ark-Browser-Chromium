@@ -152,6 +152,7 @@
 #include "chrome/browser/web_applications/web_app_icon_manager.h"
 #include "chrome/browser/web_applications/web_app_provider.h"
 #include "chrome/browser/web_applications/web_app_registrar.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/common/channel_info.h"
 #include "chrome/common/chrome_constants.h"
 #include "chrome/common/chrome_features.h"
@@ -1191,6 +1192,11 @@ std::u16string RenderViewContextMenu::FormatURLForClipboard(const GURL& url) {
   } else {
     format_types = url_formatter::kFormatUrlOmitNothing;
     unescape_rules = base::UnescapeRule::NONE;
+    if (url_to_format.SchemeIs(content::kChromeUIScheme)) {
+      GURL::Replacements replacements;
+      replacements.SetSchemeStr(ark::kUIScheme);
+      url_to_format = url_to_format.ReplaceComponents(replacements);
+    }
   }
 
   return url_formatter::FormatUrl(url_to_format, format_types, unescape_rules,

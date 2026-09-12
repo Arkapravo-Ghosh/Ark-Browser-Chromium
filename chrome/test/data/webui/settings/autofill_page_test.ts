@@ -6,8 +6,7 @@ import 'chrome://settings/settings.js';
 
 import {AiEnterpriseFeaturePrefName, AutofillManagerImpl, EntityDataManagerProxyImpl, PaymentsManagerImpl} from 'chrome://settings/lazy_load.js';
 import {CrSettingsPrefs, ModelExecutionEnterprisePolicyValue} from 'chrome://settings/settings.js';
-import type {SettingsAutofillPageElement, SettingsPrefsElement} from 'chrome://settings/settings.js';
-import {loadTimeData, MetricsBrowserProxyImpl, OpenWindowProxyImpl, PasswordManagerImpl, PasswordManagerPage, resetRouterForTesting, Router, YourSavedInfoDataCategory, YourSavedInfoDataChip, YourSavedInfoRelatedService} from 'chrome://settings/settings.js';
+import {loadTimeData, MetricsBrowserProxyImpl, OpenWindowProxyImpl, PasswordManagerImpl, PasswordManagerPage, resetRouterForTesting, Router, YourSavedInfoDataCategory, YourSavedInfoDataChip} from 'chrome://settings/settings.js';
 import {assertDeepEquals, assertEquals, assertFalse, assertTrue} from 'chrome://webui-test/chai_assert.js';
 import {flushTasks} from 'chrome://webui-test/polymer_test_util.js';
 import {TestOpenWindowProxy} from 'chrome://webui-test/test_open_window_proxy.js';
@@ -609,59 +608,12 @@ suite('RelatedServices', function() {
     assertEquals(loadTimeData.getString(urlStringId), url);
   }
 
-  test('CardRendersCorrectly', function() {
+  test('RelatedServicesCardNotRendered', function() {
     const relatedServicesCard =
         autofillPage.shadowRoot!.querySelector<HTMLElement>(
             `settings-section[page-title="${
                 loadTimeData.getString(
                     'yourSavedInfoRelatedServicesTitle')}"]`);
-    assertTrue(!!relatedServicesCard);
-
-    assertTrue(
-        !!relatedServicesCard.querySelector('#passwordManagerButton'),
-        'Password manager button not found');
-    assertTrue(
-        !!relatedServicesCard.querySelector('#googleWalletButton'),
-        'Wallet button not found');
-    assertTrue(
-        !!relatedServicesCard.querySelector('#googleAccountButton'),
-        'Profile button not found');
-  });
-
-  test('PasswordManagerRowOpensPasswordManager', async function() {
-    const passwordManagerRow =
-        autofillPage.shadowRoot!.querySelector<HTMLElement>(
-            '#passwordManagerButton');
-    assertTrue(!!passwordManagerRow);
-    passwordManagerRow.click();
-    const page = await passwordManager.whenCalled('showPasswordManager');
-    assertEquals(PasswordManagerPage.PASSWORDS, page);
-    const [service] = await metricsBrowserProxy.whenCalled(
-        'recordYourSavedInfoRelatedServiceClick');
-    assertEquals(YourSavedInfoRelatedService.GOOGLE_PASSWORD_MANAGER, service);
-    const action = await metricsBrowserProxy.whenCalled('recordAction');
-    assertEquals(
-        'Settings.YourSavedInfo.RelatedServiceClick.GOOGLE_PASSWORD_MANAGER',
-        action);
-  });
-
-  test('WalletRowOpensWallet', async function() {
-    await testRowOpensUrl('#googleWalletButton', 'googleWalletUrl');
-    const [service] = await metricsBrowserProxy.whenCalled(
-        'recordYourSavedInfoRelatedServiceClick');
-    assertEquals(YourSavedInfoRelatedService.GOOGLE_WALLET, service);
-    const action = await metricsBrowserProxy.whenCalled('recordAction');
-    assertEquals(
-        'Settings.YourSavedInfo.RelatedServiceClick.GOOGLE_WALLET', action);
-  });
-
-  test('ProfileRowOpensProfile', async function() {
-    await testRowOpensUrl('#googleAccountButton', 'googleAccountUrl');
-    const [service] = await metricsBrowserProxy.whenCalled(
-        'recordYourSavedInfoRelatedServiceClick');
-    assertEquals(YourSavedInfoRelatedService.GOOGLE_ACCOUNT, service);
-    const action = await metricsBrowserProxy.whenCalled('recordAction');
-    assertEquals(
-        'Settings.YourSavedInfo.RelatedServiceClick.GOOGLE_ACCOUNT', action);
+    assertFalse(!!relatedServicesCard);
   });
 });

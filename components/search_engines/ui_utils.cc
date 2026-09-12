@@ -192,11 +192,9 @@ template_url_starter_pack_data::StarterPackIdSet GetDisabledStarterPackIds(
     bool gemini_enabled) {
   template_url_starter_pack_data::StarterPackIdSet disabled_starter_pack_ids;
 
-  // Skip @gemini if feature disabled.
-  if (!gemini_enabled) {
-    disabled_starter_pack_ids.Put(
-        template_url_starter_pack_data::StarterPackId::kGemini);
-  }
+  // Skip @gemini: built-in starter pack engine is disabled by default in Ark Browser.
+  disabled_starter_pack_ids.Put(
+      template_url_starter_pack_data::StarterPackId::kGemini);
 
   // Skip @page if feature disabled.
   if (!omnibox_feature_configs::ContextualSearch::Get().starter_pack_page) {

@@ -131,6 +131,7 @@
 #include "chrome/browser/web_applications/web_app_helpers.h"
 #include "chrome/browser/web_applications/web_app_provider.h"
 #include "chrome/browser/web_applications/web_app_registrar.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/common/chrome_features.h"
 #include "chrome/common/content_restriction.h"
 #include "chrome/common/pref_names.h"
@@ -2869,7 +2870,13 @@ bool IsDebuggerAttachedToCurrentTab(BrowserWindowInterface* browser) {
 void CopyURL(BrowserWindowInterface* browser,
              content::WebContents* web_contents) {
   ui::ScopedClipboardWriter scw(ui::ClipboardBuffer::kCopyPaste);
-  scw.WriteText(base::UTF8ToUTF16(web_contents->GetVisibleURL().spec()));
+  GURL url = web_contents->GetVisibleURL();
+  if (url.SchemeIs(content::kChromeUIScheme)) {
+    GURL::Replacements replacements;
+    replacements.SetSchemeStr(ark::kUIScheme);
+    url = url.ReplaceComponents(replacements);
+  }
+  scw.WriteText(base::UTF8ToUTF16(url.spec()));
 
 #if !BUILDFLAG(IS_ANDROID)
   if (toast_features::IsEnabled(toast_features::kLinkCopiedToast)) {

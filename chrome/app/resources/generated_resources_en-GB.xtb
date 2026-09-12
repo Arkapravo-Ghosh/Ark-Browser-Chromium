@@ -124,7 +124,7 @@
 <translation id="1082398631555931481"><ph name="THIRD_PARTY_TOOL_NAME" /> wants to restore your Chrome settings to their original defaults. This will reset your homepage, new tab page and search engine, disable your extensions and unpin all tabs. It will also clear other temporary and cached data, such as cookies, content and site data.</translation>
 <translation id="1082725763867769612">Offline files</translation>
 <translation id="1083050113196701330">Update check completed successfully. No update was available</translation>
-<translation id="1083980330680874079">Chrome panels</translation>
+<translation id="1083980330680874079">Ark Browser panels</translation>
 <translation id="1084026333130513768">Save, share and cast</translation>
 <translation id="1084096383128641877">Removing this password will not delete your account on <ph name="DOMAIN" />. Change your password or delete your account on <ph name="DOMAIN_LINK" /> to keep it safe from others.</translation>
 <translation id="1084288067399862432">Successfully changed the compromised password.
@@ -4399,7 +4399,7 @@ You can manage this account’s settings by installing the Family Link app on yo
 <translation id="4340799661701629185">Don't allow sites to send notifications</translation>
 <translation id="4341577178275615435">To turn caret browsing on or off, use the shortcut F7</translation>
 <translation id="4342417854108207000">Allowed to edit files or folders on your device</translation>
-<translation id="4343250402091037179">To search a specific site or part of Chrome, type its shortcut in the address bar, followed by your preferred keyboard shortcut.</translation>
+<translation id="4343250402091037179">To search a specific site or part of Ark Browser, type its shortcut in the address bar, followed by your preferred keyboard shortcut.</translation>
 <translation id="4343283008857332996">Camera access is allowed for apps, websites with the camera permission and system services. To use the camera, you may need to restart the app or refresh the page.</translation>
 <translation id="4345457680916430965">&amp;Open in <ph name="APP" /></translation>
 <translation id="4345587454538109430">Configure...</translation>
@@ -7360,7 +7360,7 @@ You have # more compromised passwords. Google Password Manager recommends checki
 <translation id="666731172850799929">Open in <ph name="APP_NAME" /></translation>
 <translation id="6669195257625975787">Data is treated the same as the site that you’re viewing</translation>
 <translation id="6669865825859209286">Click here to separate or arrange the split view</translation>
-<translation id="6670767097276846646">Some extensions can add search engines to Chrome</translation>
+<translation id="6670767097276846646">Some extensions can add search engines to Ark Browser</translation>
 <translation id="6670983860904543332">Automatic updates provide you with the latest features. Explore highlights from recent updates.</translation>
 <translation id="6671320560732140690">{COUNT,plural, =1{an address}other{# addresses}}</translation>
 <translation id="6672697278890207089">Enter your passphrase</translation>

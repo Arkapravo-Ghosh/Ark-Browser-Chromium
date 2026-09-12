@@ -360,7 +360,7 @@ BASE_FEATURE(kOmniboxSearchPrefetchOnEnterKeyDown, DISABLED);
 BASE_FEATURE(kOmniboxSiteSearch, DISABLED);
 
 // Enables additional site search providers for the Site search Starter Pack.
-BASE_FEATURE(kStarterPackExpansion, enable_if(!IS_IOS));
+BASE_FEATURE(kStarterPackExpansion, DISABLED);
 
 // Enables an informational IPH message at the bottom of the Omnibox directing
 // users to certain starter pack engines.

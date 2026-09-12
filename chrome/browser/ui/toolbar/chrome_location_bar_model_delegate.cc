@@ -16,6 +16,7 @@
 #include "chrome/browser/search_engines/template_url_service_factory.h"
 #include "chrome/browser/ssl/chrome_security_state_util.h"
 #include "chrome/browser/ui/login/login_tab_helper.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/common/pref_names.h"
 #include "chrome/common/url_constants.h"
 #include "chrome/common/webui_url_constants.h"
@@ -84,6 +85,11 @@ bool ChromeLocationBarModelDelegate::GetURL(GURL* url) const {
   }
 
   *url = entry->GetVirtualURL();
+  if (url->SchemeIs(content::kChromeUIScheme)) {
+    GURL::Replacements replacements;
+    replacements.SetSchemeStr(ark::kUIScheme);
+    *url = url->ReplaceComponents(replacements);
+  }
   return true;
 }
 
@@ -129,7 +135,8 @@ bool ChromeLocationBarModelDelegate::ShouldDisplayURL() const {
   }
 
   const auto is_ntp = [](const GURL& url) {
-    return (url.SchemeIs(content::kChromeUIScheme) &&
+    return ((url.SchemeIs(content::kChromeUIScheme) ||
+             url.SchemeIs(ark::kUIScheme)) &&
             url.GetHost() == chrome::kChromeUINewTabHost) ||
            url.spec() == chrome::kChromeUISplitViewNewTabPageURL;
   };

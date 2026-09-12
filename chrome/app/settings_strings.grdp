@@ -331,8 +331,8 @@
     <message name="IDS_SETTINGS_SIDE_PANEL_ALIGNMENT_CONTEXTUAL_TASKS" desc="Label for configuring Google Search AI Mode side panel alignment.">
       Google Search AI Mode
     </message>
-    <message name="IDS_SETTINGS_SIDE_PANEL_ALIGNMENT_CHROME_PANELS" desc="Label for the default Chrome Panels alignment setting.">
-      Chrome Panels
+    <message name="IDS_SETTINGS_SIDE_PANEL_ALIGNMENT_CHROME_PANELS" desc="Label for the default Ark Browser Panels alignment setting.">
+      Ark Browser Panels
     </message>
     <message name="IDS_SETTINGS_SIDE_PANEL_ALIGNMENT_A11Y_LABEL" is_accessibility_with_no_ui="true" desc="Accessible label for side panel alignment dropdown menus, combining the side panel item name and the side panel position category name for screen readers.">
       <ph name="ITEM_NAME">$1<ex>Google Search AI Mode</ex></ph> <ph name="CATEGORY_NAME">$2<ex>Side panel position</ex></ph>
@@ -2222,7 +2222,7 @@
       Site search
     </message>
     <message name="IDS_SETTINGS_SEARCH_ENGINES_SITE_SEARCH_EXPLANATION" desc="Explanation for 'Site Search' section. Used interchangeably with IDS_SETTINGS_SEARCH_ENGINES_SITE_SEARCH_EXPLANATION_STARTER_PACK">
-      To search a specific site or part of Chrome, type its shortcut in the address bar, followed by your preferred keyboard shortcut.
+      To search a specific site or part of Ark Browser, type its shortcut in the address bar, followed by your preferred keyboard shortcut.
     </message>
     <message name="IDS_SETTINGS_SEARCH_ENGINES_NO_SITES_ADDED" desc="Text shown when the 'Site Search' section is empty">
       No sites added
@@ -2237,7 +2237,7 @@
       Extensions
     </message>
     <message name="IDS_SETTINGS_SEARCH_ENGINES_EXTENSION_ENGINES_EXPLANATION" desc="Explanation for a section that displays search engines added by extensions">
-      Some extensions can add search engines to Chrome
+      Some extensions can add search engines to Ark Browser
     </message>
     <message name="IDS_SETTINGS_SEARCH_ENGINES_NAME" desc="Label for a table column that holds the name of a search engine or site search provider">
       Name

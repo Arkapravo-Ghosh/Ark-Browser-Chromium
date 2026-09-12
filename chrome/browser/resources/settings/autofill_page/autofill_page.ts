@@ -25,13 +25,12 @@ import {PrefsMixin} from '/shared/settings/prefs/prefs_mixin.js';
 import {I18nMixin} from 'chrome://resources/cr_elements/i18n_mixin.js';
 import {WebUiListenerMixin} from 'chrome://resources/cr_elements/web_ui_listener_mixin.js';
 import {assert, assertNotReached, assertNotReachedCase} from 'chrome://resources/js/assert.js';
-import {OpenWindowProxyImpl} from 'chrome://resources/js/open_window_proxy.js';
 import {PolymerElement} from 'chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js';
 
 import {EntityTypeName} from '../autofill_ai_enums.mojom-webui.js';
 import {loadTimeData} from '../i18n_setup.js';
 import type {MetricsBrowserProxy} from '../metrics_browser_proxy.js';
-import {MetricsBrowserProxyImpl, SuggestionsFromGeminiEntryPoint, YourSavedInfoDataCategory, YourSavedInfoDataChip, YourSavedInfoRelatedService} from '../metrics_browser_proxy.js';
+import {MetricsBrowserProxyImpl, SuggestionsFromGeminiEntryPoint, YourSavedInfoDataCategory, YourSavedInfoDataChip} from '../metrics_browser_proxy.js';
 import {routes} from '../route.js';
 import {Router} from '../router.js';
 import {SettingsViewMixin} from '../settings_page/settings_view_mixin.js';
@@ -510,10 +509,7 @@ export class SettingsAutofillPageElement extends
     }
     const control =
         this.shadowRoot!.querySelector<HTMLElement>(`#${triggerId}`);
-    assert(
-        control,
-        `Failed to find associated control for child '${childViewId}'`);
-    return control;
+    return control || this;
   }
 
   private setChipCount_(chipId: YourSavedInfoDataChip, count?: number) {
@@ -586,39 +582,6 @@ export class SettingsAutofillPageElement extends
     this.metricsBrowserProxy_.recordSuggestionsFromGeminiEntryPointClick(
         SuggestionsFromGeminiEntryPoint.YOUR_SAVED_INFO);
     Router.getInstance().navigateTo(routes.SUGGESTIONS_FROM_GEMINI);
-  }
-
-  /**
-   * Opens Password Manager page on clicking a related service link.
-   */
-  private onPasswordManagerRelatedServiceClick_() {
-    this.metricsBrowserProxy_.recordYourSavedInfoRelatedServiceClick(
-        YourSavedInfoRelatedService.GOOGLE_PASSWORD_MANAGER);
-    PasswordManagerImpl.getInstance().recordPasswordsPageAccessInSettings();
-    PasswordManagerImpl.getInstance().showPasswordManager(
-        PasswordManagerPage.PASSWORDS);
-    SavedInfoHandlerImpl.getInstance().requestDataManagementSurvey(
-        DataManagementSurvey.PASSWORDS, true);
-  }
-
-  /**
-   * Opens Wallet page in a new tab.
-   */
-  private onGoogleWalletRelatedServiceClick_() {
-    this.metricsBrowserProxy_.recordYourSavedInfoRelatedServiceClick(
-        YourSavedInfoRelatedService.GOOGLE_WALLET);
-    OpenWindowProxyImpl.getInstance().openUrl(
-        loadTimeData.getString('googleWalletUrl'));
-  }
-
-  /**
-   * Opens Google Account page in a new tab.
-   */
-  private onGoogleAccountRelatedServiceClick_() {
-    this.metricsBrowserProxy_.recordYourSavedInfoRelatedServiceClick(
-        YourSavedInfoRelatedService.GOOGLE_ACCOUNT);
-    OpenWindowProxyImpl.getInstance().openUrl(
-        loadTimeData.getString('googleAccountUrl'));
   }
 }
 

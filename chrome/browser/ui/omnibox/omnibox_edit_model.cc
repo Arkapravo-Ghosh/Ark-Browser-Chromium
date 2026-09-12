@@ -41,8 +41,10 @@
 #include "chrome/browser/ui/omnibox/omnibox_popup_state_manager.h"
 #include "chrome/browser/ui/omnibox/omnibox_popup_view.h"
 #include "chrome/browser/ui/omnibox/omnibox_view.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/common/chrome_features.h"
 #include "chrome/common/webui_url_constants.h"
+#include "content/public/common/url_constants.h"
 #include "chrome/grit/theme_resources.h"
 #include "components/bookmarks/browser/bookmark_model.h"
 #include "components/contextual_search/contextual_search_metrics_recorder.h"
@@ -513,6 +515,18 @@ void OmniboxEditModel::AdjustTextForCopy(int sel_min,
       controller_->client()->GetPageClassification(/*is_prefetch=*/false),
       controller_->client()->GetContextualTasksInnerFrameURL(), url_from_text,
       write_url);
+
+  // In Ark Browser, copied internal URLs should always use the "ark://" scheme
+  // instead of "chrome://".
+  if (text && base::StartsWith(*text, u"chrome://",
+                               base::CompareCase::INSENSITIVE_ASCII)) {
+    text->replace(0, 9, u"ark://");
+  }
+  if (url_from_text && url_from_text->SchemeIs(content::kChromeUIScheme)) {
+    GURL::Replacements replacements;
+    replacements.SetSchemeStr(ark::kUIScheme);
+    *url_from_text = url_from_text->ReplaceComponents(replacements);
+  }
 }
 
 bool OmniboxEditModel::ShouldShowCurrentPageIcon() const {

@@ -73,7 +73,8 @@
 </h2>
 <div class="card-container" on-data-category-click="onDataCategoryClick_"
     on-data-chip-click="onDataChipClick_">
-  <category-reference-card card-title="$i18n{localPasswordManager}"
+  <category-reference-card id="passwordManagerButton"
+      card-title="$i18n{localPasswordManager}"
       is-external
       category-id="[[hierarchy_.passwordManager.id]]"
       chips="[[getVisibleChips_(hierarchy_.passwordManager.chips)]]">
@@ -125,19 +126,3 @@
   </collapsible-autofill-settings-card>
 </settings-section>
 
-<settings-section page-title="$i18n{yourSavedInfoRelatedServicesTitle}">
-  <div route-path="default">
-    <cr-link-row id="passwordManagerButton" label="$i18n{localPasswordManager}"
-        on-click="onPasswordManagerRelatedServiceClick_"
-        start-icon="cr20:password-manager" external>
-    </cr-link-row>
-    <cr-link-row id="googleWalletButton" label="$i18n{googleWalletTitle}"
-        on-click="onGoogleWalletRelatedServiceClick_"
-        start-icon="settings20:wallet" external>
-    </cr-link-row>
-    <cr-link-row id="googleAccountButton" label="$i18n{googleAccount}"
-        on-click="onGoogleAccountRelatedServiceClick_"
-        start-icon="settings20:google" external>
-    </cr-link-row>
-  </div>
-</settings-section>

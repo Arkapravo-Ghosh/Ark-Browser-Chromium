@@ -656,6 +656,18 @@ SettingsUI::SettingsUI(content::WebUI* web_ui)
   // Ark Browser: Rename "You and Google" to "Your Profile".
   html_source->AddString("peoplePageTitle", "Your Profile");
 
+  // Ark Browser: Rename "Chrome Panels" to "Ark Browser Panels".
+  html_source->AddString("sidePanelAlignmentChromePanels", "Ark Browser Panels");
+
+  // Ark Browser: Brand search engines explanations.
+  html_source->AddString(
+      "searchEnginesSiteSearchExplanation",
+      "To search a specific site or part of Ark Browser, type its shortcut in "
+      "the address bar, followed by your preferred keyboard shortcut.");
+  html_source->AddString(
+      "searchEnginesExtensionExplanation",
+      "Some extensions can add search engines to Ark Browser");
+
   html_source->AddBoolean("replaceSyncPromosWithSignInPromos",
                           syncer::IsReplaceSyncPromosWithSignInPromosEnabled());
 
