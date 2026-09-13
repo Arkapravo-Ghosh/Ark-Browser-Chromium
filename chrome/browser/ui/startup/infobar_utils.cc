@@ -253,6 +253,10 @@ void AddInfoBarsIfNecessary(BrowserWindowInterface* browser,
   infobars::ContentInfoBarManager* infobar_manager =
       infobars::ContentInfoBarManager::FromWebContents(web_contents);
 
+  // In Ark Browser, Google API keys are deliberately not configured as all Google
+  // services and sync integrations have been removed in favor of native local-first AI.
+  // Suppress the missing Google API keys warning banner on startup.
+#if 0
   if (!google_apis::HasAPIKeyConfigured()) {
     if (infobars::IsInfoBarMigrated(
             infobars::InfoBarDelegate::GOOGLE_API_KEYS_INFOBAR_DELEGATE)) {
@@ -266,6 +270,7 @@ void AddInfoBarsIfNecessary(BrowserWindowInterface* browser,
       GoogleApiKeysInfoBarDelegate::Create(infobar_manager);
     }
   }
+#endif
 
   if (ObsoleteSystem::IsObsoleteNowOrSoon()) {
     PrefService* local_state = g_browser_process->local_state();
