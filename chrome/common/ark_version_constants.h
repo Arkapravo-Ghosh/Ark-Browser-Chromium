@@ -8,7 +8,7 @@
 namespace ark {
 
 // Current Ark Browser release version tag.
-inline constexpr char kArkVersion[] = "155.0.8049.0-alpha.0.0.1";
+inline constexpr char kArkVersion[] = "155.0.8049.0-alpha.0.0.2";
 
 // Current Ark Browser channel (e.g. "stable", "beta", "canary").
 inline constexpr char kArkChannel[] = "stable";
