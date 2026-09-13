@@ -32,8 +32,8 @@ suite('ResetProfileBanner', function() {
   setup(function() {
     loadTimeData.overrideValues({
       // These are mock strings for verification.
-      resetAutomatedDialogTitle: 'Chrome reset these settings',
-      resetAutomatedDialogBody: 'To protect you, Chrome reset them.',
+      resetAutomatedDialogTitle: 'Ark Browser reset these settings',
+      resetAutomatedDialogBody: 'To protect you, Ark Browser reset them.',
       gotIt: 'Got it',
       learnMore: 'Learn more',
       resetProfileBannerLearnMoreUrl:
@@ -68,8 +68,8 @@ suite('ResetProfileBanner', function() {
     const body = banner.shadowRoot.querySelector('[slot=body]');
     assertTrue(!!title);
     assertTrue(!!body);
-    assertEquals('Chrome reset these settings', title.textContent.trim());
-    assertTrue(body.textContent.includes('To protect you, Chrome reset them.'));
+    assertEquals('Ark Browser reset these settings', title.textContent.trim());
+    assertTrue(body.textContent.includes('To protect you, Ark Browser reset them.'));
 
     // Verify the list of tampered preferences correctly.
     const listItems = banner.shadowRoot.querySelectorAll('li');

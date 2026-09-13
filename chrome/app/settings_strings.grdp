@@ -2086,10 +2086,10 @@
       Learn more about resetting settings
     </message>
     <message name="IDS_SETTINGS_RESET_AUTOMATED_DIALOG_V2_TITLE" desc="The title of the dialog informing the user that automated resetting of some settings occurred.">
-      Chrome reset these settings
+      Ark Browser reset these settings
     </message>
     <message name="IDS_SETTINGS_RESET_AUTOMATED_DIALOG_V2_BODY" desc="The body of the dialog informing the user that automated resetting of some settings occurred.">
-      These settings were changed from outside of Chrome. To protect you, Chrome reset them.
+      These settings were changed from outside of Ark Browser. To protect you, Ark Browser reset them.
     </message>
     <message name="IDS_SETTINGS_RESET_PINNED_TABS" desc="A string that is used to describe the pinned tabs setting.">
       Pinned tabs

@@ -13876,7 +13876,7 @@ Check your passwords anytime in <ph name="GOOGLE_PASSWORD_MANAGER">$1<ex>Google 
           <ph name="THIRD_PARTY_TOOL_NAME">$1<ex>SuperDuper PC Cleaner Pro</ex></ph> wants to reset your settings.
         </message>
         <message name="IDS_TRIGGERED_RESET_PROFILE_SETTINGS_EXPLANATION" desc="Dialog title for reset dialog triggered by a third party tool">
-          <ph name="THIRD_PARTY_TOOL_NAME">$1<ex>SuperDuper PC Cleaner Pro</ex></ph> wants to restore your Chrome settings to their original defaults. This will reset your homepage, new tab page and search engine, disable your extensions, and unpin all tabs. It will also clear other temporary and cached data, such as cookies, content and site data.
+          <ph name="THIRD_PARTY_TOOL_NAME">$1<ex>SuperDuper PC Cleaner Pro</ex></ph> wants to restore your Ark Browser settings to their original defaults. This will reset your homepage, new tab page and search engine, disable your extensions, and unpin all tabs. It will also clear other temporary and cached data, such as cookies, content and site data.
         </message>
         <message name="IDS_TRIGGERED_RESET_PROFILE_SETTINGS_DEFAULT_TOOL_NAME" desc="Default tool name when a reset was triggered but a name could not be found.">
           A cleanup tool
