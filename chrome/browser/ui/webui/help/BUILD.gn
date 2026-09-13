@@ -7,10 +7,23 @@ import("//chrome/common/features.gni")
 source_set("help") {
   public = [ "version_updater.h" ]
   public_deps = [ "//base" ]
-  deps = [ "//chrome/browser/upgrade_detector" ]
+  sources = [
+    "version_updater_ark.cc",
+    "version_updater_ark.h",
+  ]
+  deps = [
+    "//chrome/browser:browser_process",
+    "//chrome/browser/upgrade_detector",
+    "//chrome/common:non_code_constants",
+    "//content/public/browser",
+    "//net",
+    "//net/traffic_annotation",
+    "//services/network/public/cpp",
+    "//url",
+  ]
 
   if (is_chromeos) {
-    sources = [
+    sources += [
       "help_utils_chromeos.cc",
       "version_updater_chromeos.cc",
     ]
@@ -36,7 +49,7 @@ source_set("help") {
   }
 
   if (is_mac) {
-    sources = [ "version_updater_mac.mm" ]
+    sources += [ "version_updater_mac.mm" ]
     deps += [
       "//base:i18n",
       "//chrome/app:branded_strings",
@@ -50,7 +63,7 @@ source_set("help") {
 
   if (is_win) {
     if (is_chrome_branded) {
-      sources = [ "version_updater_win.cc" ]
+      sources += [ "version_updater_win.cc" ]
       deps += [
         "//chrome/app:generated_resources_grit",
         "//chrome/browser:browser_process",
@@ -62,12 +75,12 @@ source_set("help") {
         "//ui/gfx",
       ]
     } else {
-      sources = [ "version_updater_basic.cc" ]
+      sources += [ "version_updater_basic.cc" ]
     }
   }
 
   if (is_linux) {
-    sources = [ "version_updater_basic.cc" ]
+    sources += [ "version_updater_basic.cc" ]
   }
 }
 

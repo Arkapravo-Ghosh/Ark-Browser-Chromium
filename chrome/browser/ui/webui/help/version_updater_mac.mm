@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "chrome/browser/ui/webui/help/version_updater.h"
+#include "chrome/browser/ui/webui/help/version_updater_ark.h"
 
 #import <Foundation/Foundation.h>
 
@@ -132,6 +133,6 @@ class VersionUpdaterMac : public VersionUpdater {
 }  // namespace
 
 std::unique_ptr<VersionUpdater> VersionUpdater::Create(
-    content::WebContents* /* web_contents */) {
-  return base::WrapUnique(new VersionUpdaterMac());
+    content::WebContents* web_contents) {
+  return std::make_unique<VersionUpdaterArk>(web_contents);
 }

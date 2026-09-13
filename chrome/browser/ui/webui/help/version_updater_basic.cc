@@ -5,7 +5,9 @@
 #include <memory>
 #include <string>
 
+#include "build/build_config.h"
 #include "chrome/browser/ui/webui/help/version_updater.h"
+#include "chrome/browser/ui/webui/help/version_updater_ark.h"
 #include "chrome/browser/upgrade_detector/upgrade_detector.h"
 
 namespace {
@@ -31,5 +33,9 @@ class VersionUpdaterBasic : public VersionUpdater {
 
 std::unique_ptr<VersionUpdater> VersionUpdater::Create(
     content::WebContents* web_contents) {
+#if BUILDFLAG(IS_WIN)
+  return std::make_unique<VersionUpdaterArk>(web_contents);
+#else
   return std::make_unique<VersionUpdaterBasic>();
+#endif
 }

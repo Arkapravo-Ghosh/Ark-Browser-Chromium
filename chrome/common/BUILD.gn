@@ -465,6 +465,7 @@ process_version("version_header") {
 # so that they can be used without adding any binary bloat.
 static_library("non_code_constants") {
   sources = [
+    "ark_version_constants.h",
     "chrome_constants.cc",
     "chrome_constants.h",
     "chrome_switches.h",
