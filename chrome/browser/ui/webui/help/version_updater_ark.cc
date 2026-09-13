@@ -395,76 +395,88 @@ std::string VersionUpdaterArk::ExtractAndStageUpdateOnBackgroundThread(
     return "SHA-256 checksum mismatch on downloaded update package.";
   }
 
-  // 2. Create temporary mount point directory
-  base::ScopedTempDir mount_temp_dir;
-  if (!mount_temp_dir.CreateUniqueTempDir()) {
-    base::DeleteFile(temp_dmg_path);
-    return "Failed to create temporary directory for DMG mount.";
-  }
-  base::FilePath mount_point = mount_temp_dir.GetPath();
-
-  // 3. Attach DMG quietly via hdiutil
-  std::vector<std::string> attach_argv = {
-      "/usr/bin/hdiutil", "attach", "-nobrowse", "-readonly",
-      temp_dmg_path.value(), "-mountpoint", mount_point.value()};
-  base::CommandLine attach_cmd(attach_argv);
-  int attach_exit = 0;
-  base::Process attach_proc =
-      base::LaunchProcess(attach_cmd, base::LaunchOptions());
-  if (!attach_proc.IsValid() || !attach_proc.WaitForExit(&attach_exit) ||
-      attach_exit != 0) {
-    base::DeleteFile(temp_dmg_path);
-    return "Failed to attach update disk image.";
-  }
-
-  // 4. Find the .app bundle inside the mounted volume
-  base::FileEnumerator enumerator(mount_point, false,
-                                  base::FileEnumerator::DIRECTORIES, "*.app");
-  base::FilePath source_app = enumerator.Next();
-
-  if (source_app.empty()) {
-    base::CommandLine detach_cmd({"/usr/bin/hdiutil", "detach", mount_point.value(), "-force"});
-    int detach_exit = 0;
-    base::Process detach_proc = base::LaunchProcess(detach_cmd, base::LaunchOptions());
-    if (detach_proc.IsValid()) {
-      detach_proc.WaitForExit(&detach_exit);
-    }
-    base::DeleteFile(temp_dmg_path);
-    return "No application bundle found inside update disk image.";
-  }
-
-  // 5. Locate staging folder in Application Support
+  // 2. Locate staging folder in Application Support
   base::FilePath staged_dir;
   if (!base::PathService::Get(base::DIR_APP_DATA, &staged_dir)) {
-    staged_dir = base::GetHomeDir().Append("Library").Append("Application Support").Append("Ark Browser");
+    staged_dir = base::GetHomeDir()
+                     .Append("Library")
+                     .Append("Application Support")
+                     .Append("Ark Browser");
   }
   staged_dir = staged_dir.Append("StagedUpdate");
   base::DeletePathRecursively(staged_dir);
   base::CreateDirectory(staged_dir);
-  base::FilePath staged_app = staged_dir.Append(source_app.BaseName());
 
-  // Copy via /usr/bin/ditto to preserve code signatures, extended attributes, and symlinks
-  std::vector<std::string> ditto_argv = {"/usr/bin/ditto", source_app.value(),
-                                         staged_app.value()};
-  base::CommandLine ditto_cmd(ditto_argv);
-  int ditto_exit = 0;
-  base::Process ditto_proc =
-      base::LaunchProcess(ditto_cmd, base::LaunchOptions());
-  bool ditto_ok =
-      ditto_proc.IsValid() && ditto_proc.WaitForExit(&ditto_exit) && ditto_exit == 0;
+  base::FilePath staged_app;
 
-  // 6. Detach DMG and cleanup temp file
-  base::CommandLine detach_cmd({"/usr/bin/hdiutil", "detach", mount_point.value(), "-force"});
-  int detach_exit = 0;
-  base::Process detach_proc = base::LaunchProcess(detach_cmd, base::LaunchOptions());
-  if (detach_proc.IsValid()) {
-    detach_proc.WaitForExit(&detach_exit);
+  // 3. Extract the update package
+  // First, attempt direct archive extraction using /usr/bin/ditto (for .zip / .app.zip)
+  std::vector<std::string> ditto_extract_argv = {
+      "/usr/bin/ditto", "-x", "-k", temp_dmg_path.value(), staged_dir.value()};
+  base::CommandLine ditto_extract_cmd(ditto_extract_argv);
+  int ditto_extract_exit = 0;
+  base::Process ditto_extract_proc =
+      base::LaunchProcess(ditto_extract_cmd, base::LaunchOptions());
+  bool ditto_extracted = ditto_extract_proc.IsValid() &&
+                         ditto_extract_proc.WaitForExit(&ditto_extract_exit) &&
+                         ditto_extract_exit == 0;
+
+  if (ditto_extracted) {
+    base::FileEnumerator enumerator(staged_dir, false,
+                                    base::FileEnumerator::DIRECTORIES, "*.app");
+    staged_app = enumerator.Next();
   }
+
+  // 4. Fallback: If not extracted via ditto, attempt mounting as DMG
+  if (staged_app.empty()) {
+    base::ScopedTempDir mount_temp_dir;
+    if (mount_temp_dir.CreateUniqueTempDir()) {
+      base::FilePath mount_point = mount_temp_dir.GetPath();
+      std::vector<std::string> attach_argv = {
+          "/usr/bin/hdiutil", "attach",      "-nobrowse",
+          "-readonly",        "-noautoopen", "-noverify",
+          "-noautofsck",      temp_dmg_path.value(),
+          "-mountpoint",      mount_point.value()};
+      base::CommandLine attach_cmd(attach_argv);
+      int attach_exit = 0;
+      base::Process attach_proc =
+          base::LaunchProcess(attach_cmd, base::LaunchOptions());
+      if (attach_proc.IsValid() && attach_proc.WaitForExit(&attach_exit) &&
+          attach_exit == 0) {
+        base::FileEnumerator enumerator(
+            mount_point, false, base::FileEnumerator::DIRECTORIES, "*.app");
+        base::FilePath source_app = enumerator.Next();
+        if (!source_app.empty()) {
+          staged_app = staged_dir.Append(source_app.BaseName());
+          std::vector<std::string> ditto_argv = {
+              "/usr/bin/ditto", source_app.value(), staged_app.value()};
+          base::CommandLine ditto_cmd(ditto_argv);
+          int ditto_exit = 0;
+          base::Process ditto_proc =
+              base::LaunchProcess(ditto_cmd, base::LaunchOptions());
+          if (ditto_proc.IsValid()) {
+            ditto_proc.WaitForExit(&ditto_exit);
+          }
+        }
+        // Detach DMG
+        base::CommandLine detach_cmd(
+            {"/usr/bin/hdiutil", "detach", mount_point.value(), "-force"});
+        int detach_exit = 0;
+        base::Process detach_proc =
+            base::LaunchProcess(detach_cmd, base::LaunchOptions());
+        if (detach_proc.IsValid()) {
+          detach_proc.WaitForExit(&detach_exit);
+        }
+      }
+    }
+  }
+
+  // 5. Cleanup downloaded package
   base::DeleteFile(temp_dmg_path);
 
-  if (!ditto_ok) {
+  if (staged_app.empty() || !base::PathExists(staged_app)) {
     base::DeletePathRecursively(staged_dir);
-    return "Failed to copy staged application bundle.";
+    return "Failed to extract application bundle from update package.";
   }
 
   // 7. Atomic Swap into Target Bundle
