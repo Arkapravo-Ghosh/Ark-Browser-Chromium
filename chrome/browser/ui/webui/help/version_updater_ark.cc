@@ -479,6 +479,18 @@ std::string VersionUpdaterArk::ExtractAndStageUpdateOnBackgroundThread(
     return "Failed to extract application bundle from update package.";
   }
 
+  // 6. Strip quarantine and extended attributes from the staged bundle so Gatekeeper
+  // does not block the application upon relaunch.
+  std::vector<std::string> xattr_argv = {"/usr/bin/xattr", "-cr",
+                                         staged_app.value()};
+  base::CommandLine xattr_cmd(xattr_argv);
+  int xattr_exit = 0;
+  base::Process xattr_proc =
+      base::LaunchProcess(xattr_cmd, base::LaunchOptions());
+  if (xattr_proc.IsValid()) {
+    xattr_proc.WaitForExit(&xattr_exit);
+  }
+
   // 7. Atomic Swap into Target Bundle
   // Determine target bundle path: OuterBundlePath or /Applications/Ark Browser.app
   base::FilePath default_apps_bundle("/Applications/Ark Browser.app");
