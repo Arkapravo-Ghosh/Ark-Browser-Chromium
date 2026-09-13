@@ -8,8 +8,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <vector>
-
+#include "base/files/file_path.h"
 #include "base/memory/raw_ptr.h"
 #include "base/memory/weak_ptr.h"
 #include "build/build_config.h"
@@ -25,8 +24,8 @@ class SimpleURLLoader;
 
 // Ark Browser native version updater.
 // Checks remote release manifest (JSON) on GitHub Releases / CDN,
-// handles platform filtering (macOS arm64 only, Windows open, Linux disabled),
-// and informs the WebUI About/Help page.
+// handles platform filtering, downloads DMG in background with live progress %,
+// verifies SHA-256, extracts & stages the update, and swaps binaries on relaunch.
 class VersionUpdaterArk : public VersionUpdater {
  public:
   explicit VersionUpdaterArk(content::WebContents* web_contents);
@@ -54,8 +53,25 @@ class VersionUpdaterArk : public VersionUpdater {
                         std::unique_ptr<network::SimpleURLLoader> loader,
                         std::optional<std::string> response_body);
 
+  void StartDownload(const std::string& download_url);
+  void OnDownloadProgress(uint64_t current_bytes);
+  void OnDownloadComplete(base::FilePath temp_file_path);
+  void OnStageComplete(std::string error_message);
+
+  static std::string ExtractAndStageUpdateOnBackgroundThread(
+      base::FilePath temp_dmg_path,
+      std::string expected_sha256,
+      base::FilePath target_bundle);
+
   raw_ptr<content::WebContents> web_contents_;
   std::unique_ptr<network::SimpleURLLoader> url_loader_;
+  std::unique_ptr<network::SimpleURLLoader> download_loader_;
+
+  StatusCallback status_callback_;
+  std::string target_version_;
+  std::string target_sha256_;
+  int64_t expected_size_ = 0;
+
   base::WeakPtrFactory<VersionUpdaterArk> weak_factory_{this};
 };
 

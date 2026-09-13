@@ -16,6 +16,7 @@ source_set("help") {
     "//chrome/browser/upgrade_detector",
     "//chrome/common:non_code_constants",
     "//content/public/browser",
+    "//crypto",
     "//net",
     "//net/traffic_annotation",
     "//services/network/public/cpp",
