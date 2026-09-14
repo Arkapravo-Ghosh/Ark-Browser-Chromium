@@ -64,14 +64,18 @@ class ArkUI : public ui::MojoWebUIController, public ark::mojom::PageHandler {
   void SearchLocalModels(const std::string& query,
                          SearchLocalModelsCallback callback) override;
   void GetLocalModelState(GetLocalModelStateCallback callback) override;
+  void GetInstalledLocalModels(
+      GetInstalledLocalModelsCallback callback) override;
   void StartLocalModelDownload(
+      const std::string& repository,
       bool license_accepted,
       StartLocalModelDownloadCallback callback) override;
   void PauseLocalModelDownload(
       PauseLocalModelDownloadCallback callback) override;
   void ResumeLocalModelDownload(
       ResumeLocalModelDownloadCallback callback) override;
-  void DeleteLocalModel(DeleteLocalModelCallback callback) override;
+  void DeleteLocalModel(const std::string& model_id,
+                        DeleteLocalModelCallback callback) override;
   void SendChatPrompt(const std::string& conversation_id,
                       const std::string& message,
                       const std::optional<std::string>& image_data,

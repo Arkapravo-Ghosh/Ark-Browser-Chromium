@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import {ChatMessage, ConversationState, LocalModelState, PageHandler} from './ark.mojom-webui.js';
+import {ChatMessage, ConversationState, InstalledLocalModel, LocalModelState, PageHandler} from './ark.mojom-webui.js';
 
 function get<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -19,6 +19,7 @@ const clearButton = get<HTMLButtonElement>('clear-draft');
 const dialog = get<HTMLDialogElement>('clear-dialog');
 const GEMINI_KEY_STORAGE = 'ark_gemini_api_key';
 const SELECTED_MODEL_STORAGE = 'ark_selected_model';
+const RAIL_COLLAPSED_STORAGE = 'ark_rail_collapsed';
 const pageHandler = PageHandler.getRemote();
 let currentRoute: Route = 'home';
 let newChatPending = false;
@@ -27,13 +28,53 @@ let conversationsList: ConversationState[] = [];
 let currentMessages: ChatMessage[] = [];
 let draftSaveTimer = 0;
 let aiSearchMode = false;
-let activeModel = 'local:qwen2.5-vl-7b-instruct';
+const PREPARED_LOCAL_MODEL = 'local:mlx:llama-3.2-11b-vision-instruct';
+let activeModel = PREPARED_LOCAL_MODEL;
 let isGenerating = false;
 let currentLocalModelState: LocalModelState | null = null;
+let installedLocalModels: InstalledLocalModel[] = [];
 const isSidePanel = location.host === 'ark-side-panel';
+
+function isSelectableLocalModel(model: InstalledLocalModel): boolean {
+  return model.runtimeCompatible || model.runtimeBackend === 'llama.cpp';
+}
 
 if (isSidePanel) {
   document.documentElement.classList.add('side-panel-surface');
+}
+
+function setRailCollapsed(collapsed: boolean): void {
+  if (isSidePanel) {
+    return;
+  }
+  document.documentElement.classList.toggle('rail-collapsed', collapsed);
+  const toggle = get<HTMLButtonElement>('rail-toggle');
+  toggle.ariaExpanded = String(!collapsed);
+  toggle.setAttribute('aria-label', collapsed ? 'Expand navigation' : 'Collapse navigation');
+  toggle.title = collapsed ? 'Expand navigation' : 'Collapse navigation';
+  localStorage.setItem(RAIL_COLLAPSED_STORAGE, String(collapsed));
+}
+
+get('rail-toggle').addEventListener('click', () => {
+  setRailCollapsed(!document.documentElement.classList.contains('rail-collapsed'));
+});
+setRailCollapsed(localStorage.getItem(RAIL_COLLAPSED_STORAGE) === 'true');
+
+function showArkNotice(title: string, message: string): void {
+  get('ark-notice-title').textContent = title;
+  get('ark-notice-message').textContent = message;
+  get<HTMLDialogElement>('ark-notice-dialog').showModal();
+}
+
+function confirmModelDelete(displayName: string): Promise<boolean> {
+  const modelDialog = get<HTMLDialogElement>('model-delete-dialog');
+  get('model-delete-message').textContent =
+      `Delete ${displayName} from this Mac? Downloaded weights will be removed; chats remain intact.`;
+  modelDialog.showModal();
+  return new Promise(resolve => {
+    modelDialog.addEventListener('close', () => resolve(modelDialog.returnValue === 'delete'),
+                                 {once: true});
+  });
 }
 
 
@@ -85,18 +126,17 @@ function updateSendButtonState(): void {
     return;
   }
   const hasText = Boolean(draft.value.trim());
-  const isInstalled = Boolean(
-      currentLocalModelState?.installed &&
-      currentLocalModelState?.runtimeCompatible);
+  const isInstalled = installedLocalModels.some(
+      model => model.modelId === activeModel && isSelectableLocalModel(model));
   const hasGemini = Boolean(localStorage.getItem(GEMINI_KEY_STORAGE)?.trim());
   const isReady = activeModel.startsWith('local:') ? isInstalled : hasGemini;
 
-  sendBtn.disabled = !hasText || isGenerating;
+  sendBtn.disabled = !hasText || !isReady || isGenerating;
   if (isGenerating) {
     sendBtn.title = 'Generating response…';
   } else if (!isReady) {
     sendBtn.title = activeModel.startsWith('local:') ?
-        'Qwen2.5-VL 7B is not downloaded yet. Go to Models to download.' :
+        'The selected local model is not downloaded yet. Go to Models to download.' :
         'Gemini API key is required. Go to Models > Cloud providers to configure.';
   } else if (!hasText) {
     sendBtn.title = 'Type a message to send';
@@ -105,32 +145,35 @@ function updateSendButtonState(): void {
   }
 }
 
-function determineSelectedModel(installed: boolean, hasGemini: boolean): string {
+function determineSelectedModel(hasGemini: boolean): string {
   const lastSelected = localStorage.getItem(SELECTED_MODEL_STORAGE);
   const validModels = [
-    'local:qwen2.5-vl-7b-instruct',
-    'local:gemma-4-12b-it',
+    ...installedLocalModels.filter(isSelectableLocalModel)
+        .map(model => model.modelId),
     'cloud:gemini-2.5-flash',
     'cloud:gemini-2.5-pro',
   ];
   if (lastSelected && validModels.includes(lastSelected)) {
-    return lastSelected === 'local:gemma-4-12b-it' ?
-        'local:qwen2.5-vl-7b-instruct' : lastSelected;
+    return lastSelected;
   }
-  if (installed) {
-    return 'local:qwen2.5-vl-7b-instruct';
+  const firstLocal = installedLocalModels.find(isSelectableLocalModel);
+  if (firstLocal) {
+    return firstLocal.modelId;
   }
   if (hasGemini) {
     return 'cloud:gemini-2.5-flash';
   }
-  return 'local:qwen2.5-vl-7b-instruct';
+  return PREPARED_LOCAL_MODEL;
 }
 
 function getModelDisplayName(modelId: string): string {
+  const installed = installedLocalModels.find(model => model.modelId === modelId);
+  if (installed) {
+    return `${installed.displayName} (Local)`;
+  }
   switch (modelId) {
-    case 'local:qwen2.5-vl-7b-instruct':
-    case 'local:gemma-4-12b-it':
-      return 'Qwen2.5-VL 7B Instruct (Local)';
+    case PREPARED_LOCAL_MODEL:
+      return 'Llama 3.2 11B Vision Instruct (Local · MLX)';
     case 'cloud:gemini-2.5-flash':
       return 'Gemini 2.5 Flash (Cloud)';
     case 'cloud:gemini-2.5-pro':
@@ -142,7 +185,8 @@ function getModelDisplayName(modelId: string): string {
 
 function updateModelStatusUI(modelId: string): void {
   activeModel = modelId;
-  const isInstalled = Boolean(currentLocalModelState?.installed);
+  const installed = installedLocalModels.find(model => model.modelId === modelId);
+  const isInstalled = Boolean(installed && isSelectableLocalModel(installed));
   const geminiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
   const hasGemini = Boolean(geminiKey);
 
@@ -160,13 +204,13 @@ function updateModelStatusUI(modelId: string): void {
       composerDot.classList.add('active');
       homeCaption.textContent = 'On-device Metal · Ready';
       composerCaptionText.textContent =
-          'Connected to Qwen2.5-VL 7B Instruct · On-device Metal';
+          `Connected to ${installed?.displayName || 'local model'} · On-device Metal`;
     } else {
       homeDot.classList.add('prepared');
       composerDot.classList.add('prepared');
       homeCaption.textContent = 'On-device Metal · Needs Download';
       composerCaptionText.textContent =
-          'Qwen2.5-VL 7B not downloaded · Go to Models to download';
+          'No compatible local model selected · Go to Models to download';
     }
   } else if (modelId.startsWith('cloud:gemini')) {
     if (hasGemini) {
@@ -188,11 +232,10 @@ function updateModelStatusUI(modelId: string): void {
 }
 
 function populateModelSelectors(): void {
-  const isInstalled = Boolean(currentLocalModelState?.installed);
   const geminiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
   const hasGemini = Boolean(geminiKey);
 
-  const selected = determineSelectedModel(isInstalled, hasGemini);
+  const selected = determineSelectedModel(hasGemini);
   activeModel = selected;
 
   const selects = [
@@ -205,12 +248,21 @@ function populateModelSelectors(): void {
 
     const localGroup = document.createElement('optgroup');
     localGroup.label = 'Local Models (Apple Silicon Metal)';
-    const localOpt = document.createElement('option');
-    localOpt.value = 'local:qwen2.5-vl-7b-instruct';
-    localOpt.textContent = isInstalled ?
-        'Qwen2.5-VL 7B Instruct (Local) · Installed' :
-        'Qwen2.5-VL 7B Instruct (Local) · Needs Download';
-    localGroup.appendChild(localOpt);
+    if (installedLocalModels.length === 0) {
+      const empty = document.createElement('option');
+      empty.value = PREPARED_LOCAL_MODEL;
+      empty.textContent = 'No local model installed · Open Models';
+      localGroup.appendChild(empty);
+    } else {
+      for (const model of installedLocalModels) {
+        const option = document.createElement('option');
+        option.value = model.modelId;
+        option.disabled = !isSelectableLocalModel(model);
+        option.textContent = `${model.displayName} · ${model.variant} · ${model.runtimeBackend}${
+            model.runtimeCompatible ? '' : ' · Incompatible'}`;
+        localGroup.appendChild(option);
+      }
+    }
     sel.appendChild(localGroup);
 
     const cloudGroup = document.createElement('optgroup');
@@ -269,6 +321,70 @@ get('composer-model-select').addEventListener('change', onModelSelectChange);
 get('home-model-select').addEventListener('change', onModelSelectChange);
 populateModelSelectors();
 
+async function refreshInstalledModels(): Promise<void> {
+  try {
+    const {models} = await pageHandler.getInstalledLocalModels();
+    installedLocalModels = models;
+    populateModelSelectors();
+    renderInstalledModels();
+  } catch (error) {
+    console.warn('Failed to enumerate installed local models:', error);
+  }
+}
+
+function renderInstalledModels(): void {
+  const container = get('installed-models');
+  const count = get('installed-model-count');
+  container.replaceChildren();
+  count.textContent = `${installedLocalModels.length} INSTALLED`;
+  if (installedLocalModels.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'installed-empty';
+    empty.textContent = 'No local models installed yet. Search Hugging Face or use the prepared model below.';
+    container.appendChild(empty);
+    return;
+  }
+  for (const model of installedLocalModels) {
+    const card = document.createElement('article');
+    card.className = 'installed-model-card';
+    const copy = document.createElement('div');
+    const heading = document.createElement('h3');
+    heading.textContent = model.displayName;
+    const meta = document.createElement('p');
+    meta.textContent = `${model.runtimeBackend} · ${model.variant} · ${formatBytes(model.bytesTotal)} · ${model.repository}`;
+    copy.append(heading, meta);
+    const actions = document.createElement('div');
+    actions.className = 'installed-model-actions';
+    const useButton = document.createElement('button');
+    useButton.type = 'button';
+    useButton.className = 'primary';
+    useButton.textContent = activeModel === model.modelId ? 'Selected' : 'Use in chat';
+    useButton.disabled = activeModel === model.modelId || !isSelectableLocalModel(model);
+    useButton.addEventListener('click', () => {
+      localStorage.setItem(SELECTED_MODEL_STORAGE, model.modelId);
+      updateModelStatusUI(model.modelId);
+      populateModelSelectors();
+      if (conversationId) void pageHandler.updateConversationModel(conversationId, model.modelId);
+      renderInstalledModels();
+    });
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'button-danger';
+    deleteButton.textContent = 'Delete';
+    deleteButton.addEventListener('click', async () => {
+      if (!await confirmModelDelete(model.displayName)) return;
+      deleteButton.disabled = true;
+      deleteButton.textContent = 'Deleting…';
+      const {state} = await pageHandler.deleteLocalModel(model.modelId);
+      updateLocalModelUI(state);
+      await refreshInstalledModels();
+    });
+    actions.append(useButton, deleteButton);
+    card.append(copy, actions);
+    container.appendChild(card);
+  }
+}
+
 function renderTypingIndicator(container: HTMLElement): void {
   const dots = document.createElement('span');
   dots.className = 'typing-dots';
@@ -280,24 +396,64 @@ function renderTypingIndicator(container: HTMLElement): void {
 
 function highlightCode(code: string, lang: string): string {
   let esc = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  lang = lang.toLowerCase();
+  const aliases: Record<string, string> = {
+    'c#': 'csharp', 'cs': 'csharp', 'dotnet': 'csharp',
+    'c++': 'cpp', 'cc': 'cpp', 'cxx': 'cpp',
+    'ts': 'typescript', 'js': 'javascript', 'jsx': 'javascript',
+    'py': 'python', 'rb': 'ruby', 'ps': 'powershell', 'ps1': 'powershell',
+    'shell': 'bash', 'sh': 'bash', 'zsh': 'bash',
+    'yml': 'yaml', 'htm': 'html', 'xml': 'html', 'svg': 'html',
+    'postgres': 'sql', 'postgresql': 'sql', 'mysql': 'sql', 'sqlite': 'sql',
+    'golang': 'go', 'kt': 'kotlin', 'rs': 'rust', 'csx': 'csharp',
+  };
+  lang = aliases[lang.toLowerCase()] || lang.toLowerCase();
 
   const jsKeywords = 'const let var function return if else for while class import export from async await new this typeof instanceof try catch throw switch case break continue default void null undefined true false';
   const pyKeywords = 'def class import from return if elif else for while try except with as lambda yield pass break continue and or not in is None True False self';
   const shKeywords = 'if then else fi for do done while case esac function echo export source';
   const cKeywords = 'int char float double void return if else for while do switch case break continue struct typedef';
   const rsKeywords = 'fn let mut pub struct enum impl trait use mod match if else for while loop return self Self async await where type const static ref move unsafe extern crate super true false';
+  const csharpKeywords = 'abstract as base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern false finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new null object operator out override params private protected public readonly ref sbyte sealed short sizeof stackalloc static string struct switch this throw true try typeof uint ulong unchecked unsafe ushort using virtual void volatile while async await get set init record required global var dynamic nameof';
+  const javaKeywords = 'abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new null package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while true false record sealed permits non-sealed var';
+  const sqlKeywords = 'select from where join inner left right full outer on as and or not null true false insert into values update set delete create alter drop table database schema index view primary key foreign references unique check constraint group by having order asc desc limit offset union all distinct case when then else end exists between like in is grant revoke commit rollback begin transaction with recursive returning';
+  const goKeywords = 'break default func interface select case defer go map struct chan else goto package switch const fallthrough if range type continue for import return var nil true false';
+  const kotlinKeywords = 'as break class continue do else false for fun if in interface is null object package return super this throw true try typealias val var when while by catch constructor delegate dynamic field file finally get import init param property receiver set setparam where actual abstract annotation companion const crossinline data enum expect external final infix inline inner internal lateinit noinline open operator out override private protected public reified sealed suspend tailrec vararg';
+  const swiftKeywords = 'associatedtype class deinit enum extension fileprivate func import init inout internal let open operator private protocol public rethrows static struct subscript typealias var break continue default defer do else fallthrough for guard if in repeat return switch where while as catch false is nil super self Self throw throws true try actor any async await some nonisolated';
+  const rubyKeywords = 'BEGIN END alias and begin break case class def defined do else elsif end ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield require include attr_reader attr_writer';
+  const phpKeywords = 'abstract and array as break callable case catch class clone const continue declare default do echo else elseif empty enddeclare endfor endforeach endif endswitch endwhile eval exit extends final finally for foreach function global goto if implements include include_once instanceof insteadof interface isset list namespace new or print private protected public require require_once return static switch throw trait try unset use var while xor yield true false null';
+  const scalaKeywords = 'abstract case catch class def do else extends false final finally for forSome if implicit import lazy match new null object override package private protected return sealed super this throw trait true try type val var while with yield given enum export extension inline opaque open transparent';
+  const dartKeywords = 'abstract as assert async await break case catch class const continue covariant default deferred do dynamic else enum export extends extension external factory false final finally for get hide if implements import in interface is late library mixin new null on operator part required rethrow return set show static super switch sync this throw true try typedef var void while with yield';
+  const luaKeywords = 'and break do else elseif end false for function goto if in local nil not or repeat return then true until while';
+  const powershellKeywords = 'begin break catch class continue data do dynamicparam else elseif end exit filter finally for foreach from function if in param process return switch throw trap try until using var while workflow parallel sequence public private static hidden';
+  const yamlKeywords = 'true false null yes no on off include anchors aliases';
 
   let keywords = '';
-  if (lang === 'js' || lang === 'javascript' || lang === 'ts' || lang === 'typescript') keywords = jsKeywords;
-  else if (lang === 'py' || lang === 'python') keywords = pyKeywords;
-  else if (lang === 'sh' || lang === 'bash') keywords = shKeywords;
-  else if (lang === 'c' || lang === 'cpp' || lang === 'c++') keywords = cKeywords;
-  else if (lang === 'rs' || lang === 'rust') keywords = rsKeywords;
+  if (lang === 'javascript' || lang === 'typescript') keywords = jsKeywords;
+  else if (lang === 'python') keywords = pyKeywords;
+  else if (lang === 'bash') keywords = shKeywords;
+  else if (lang === 'c' || lang === 'cpp') keywords = cKeywords;
+  else if (lang === 'rust') keywords = rsKeywords;
+  else if (lang === 'csharp') keywords = csharpKeywords;
+  else if (lang === 'java') keywords = javaKeywords;
+  else if (lang === 'sql') keywords = sqlKeywords;
+  else if (lang === 'go') keywords = goKeywords;
+  else if (lang === 'kotlin') keywords = kotlinKeywords;
+  else if (lang === 'swift') keywords = swiftKeywords;
+  else if (lang === 'ruby') keywords = rubyKeywords;
+  else if (lang === 'php') keywords = phpKeywords;
+  else if (lang === 'scala') keywords = scalaKeywords;
+  else if (lang === 'dart') keywords = dartKeywords;
+  else if (lang === 'lua') keywords = luaKeywords;
+  else if (lang === 'powershell') keywords = powershellKeywords;
+  else if (lang === 'yaml' || lang === 'toml') keywords = yamlKeywords;
 
   if (keywords) {
     const kws = keywords.split(' ').join('|');
-    const tokenRegex = new RegExp(`(//.*|/\\*[\\s\\S]*?\\*/|#.*)|(["'\`][\\s\\S]*?["'\`])|(\\b\\d+\\.?\\d*\\b)|(\\b(?:${kws})\\b)|(\\b\\w+)(?=\\s*\\()`, 'g');
+    const lineComment = lang === 'sql' ? '(?:--|#).*' :
+        (lang === 'python' || lang === 'bash' || lang === 'ruby' ||
+         lang === 'powershell' || lang === 'yaml' || lang === 'toml') ? '#.*' :
+        lang === 'lua' ? '--.*' : '//.*';
+    const tokenRegex = new RegExp(`(${lineComment}|/\\*[\\s\\S]*?\\*/)|(["'\`][\\s\\S]*?["'\`])|(\\b\\d+\\.?\\d*\\b)|(\\b(?:${kws})\\b)|(\\b\\w+)(?=\\s*\\()`, 'gi');
 
     esc = esc.replace(tokenRegex, (match, comment, str, num, kw, func) => {
       if (comment) return `<span class="tok-comment">${comment}</span>`;
@@ -307,12 +463,12 @@ function highlightCode(code: string, lang: string): string {
       if (func) return `<span class="tok-function">${func}</span>`;
       return match;
     });
-  } else if (lang === 'html' || lang === 'xml') {
+  } else if (lang === 'html') {
     esc = esc.replace(/(&lt;\/?[\w:-]+)(.*?)(&gt;)/g, (_match, p1, p2, p3) => {
       const attrs = p2.replace(/([\w-]+)=(&quot;.*?&quot;|&#39;.*?&#39;)/g, '<span class="tok-attr">$1</span>=<span class="tok-string">$2</span>');
       return `<span class="tok-tag">${p1}</span>${attrs}<span class="tok-tag">${p3}</span>`;
     });
-  } else if (lang === 'json') {
+  } else if (lang === 'json' || lang === 'jsonc') {
     esc = esc.replace(/(&quot;.*?&quot;)\s*:/g, '<span class="tok-keyword">$1</span>:');
     esc = esc.replace(/: \s*(&quot;.*?&quot;)/g, ': <span class="tok-string">$1</span>');
     esc = esc.replace(/\b(\d+)\b/g, '<span class="tok-number">$1</span>');
@@ -347,7 +503,7 @@ function renderMarkdown(text: string): string {
 
   // 2. Extract code blocks first so inner content is preserved untouched
   const codeBlocks: {lang: string, code: string}[] = [];
-  src = src.replace(/```([a-zA-Z0-9_-]*)[ \t]*\n([\s\S]*?)```/g, (_, lang, code) => {
+  src = src.replace(/```([a-zA-Z0-9_+.#-]*)[ \t]*\n([\s\S]*?)```/g, (_, lang, code) => {
     let cleanCode = code;
     if (cleanCode.endsWith('\n')) {
       cleanCode = cleanCode.slice(0, -1);
@@ -420,7 +576,8 @@ function renderMarkdown(text: string): string {
     const {lang, code} = block;
     const hl = highlightCode(code, lang);
     const escCode = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    return `<div class="md-code-block"><div class="md-code-header"><span class="md-code-lang">${lang}</span><button class="md-copy-btn" data-code="${escCode}">Copy</button></div><pre><code>${hl}</code></pre></div>`;
+    const safeLang = lang.replace(/[^a-zA-Z0-9_+.#-]/g, '');
+    return `<div class="md-code-block"><div class="md-code-header"><span class="md-code-lang">${safeLang}</span><button class="md-copy-btn" data-code="${escCode}">Copy</button></div><pre><code>${hl}</code></pre></div>`;
   });
 
   return output;
@@ -505,7 +662,7 @@ function renderMessageBubble(
 
   const bubble = document.createElement('div');
   bubble.className = 'message-bubble';
-  if (role === 'assistant') {
+  if (role === 'assistant' || role === 'user') {
     setSafeHTML(bubble, renderMarkdown(content));
     attachCopyHandlers(bubble);
   } else {
@@ -799,7 +956,7 @@ function synthesizeLocalText(prompt: string, history: ChatMessage[] = []): strin
 
   // 3. Identity / Model info
   if (/\b(who are you|what are you|what model|your name|which model)\b/i.test(lower)) {
-    return "I am Ark AI, using Qwen2.5-VL 7B locally inside Ark Browser.\n\n" +
+    return "I am Ark AI, using a local Apple Silicon model inside Ark Browser.\n\n" +
            "Key details:\n" +
            "• Architecture: Google Gemma 4 (12B Instruction Tuned)\n" +
            "• Runtime: On-device Apple Silicon Metal GPU acceleration\n" +
@@ -1029,7 +1186,7 @@ async function streamGeminiResponse(prompt: string, bubble: HTMLElement): Promis
   const text =
       `[Cloud Gemini Response]\n\n` +
       synthesizeLocalText(prompt, currentMessages) +
-      `\n\n*(Switch to Qwen2.5-VL 7B Instruct for 100% on-device Metal inference.)*`;
+      `\n\n*(Switch to an installed local model for 100% on-device Metal inference.)*`;
   return await streamTextToBubble(text, bubble);
 }
 
@@ -1039,11 +1196,12 @@ async function generateLocalResponse(prompt: string, bubble: HTMLElement): Promi
     if (result && result.response) {
       return await streamTextToBubble(result.response, bubble);
     }
+    const error = result?.response || 'The local model did not return a response.';
+    throw new Error(error);
   } catch (err: unknown) {
-    console.warn('sendChatPrompt remote invocation error, using local fallback:', err);
+    console.warn('sendChatPrompt remote invocation error:', err);
+    throw err;
   }
-  const fallback = synthesizeLocalText(prompt, currentMessages);
-  return await streamTextToBubble(fallback, bubble);
 }
 
 function generateChatTitle(firstPrompt: string): string {
@@ -1072,19 +1230,22 @@ async function sendMessage(overrideText?: string): Promise<void> {
     return;
   }
 
-  const isInstalled = Boolean(
-      currentLocalModelState?.installed &&
-      currentLocalModelState?.runtimeCompatible);
+  const isInstalled = installedLocalModels.some(
+      model => model.modelId === activeModel && isSelectableLocalModel(model));
   const geminiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
   const hasGemini = Boolean(geminiKey);
 
   if (activeModel.startsWith('local:') && !isInstalled) {
-    alert('Qwen2.5-VL 7B Instruct is not ready yet. Please download it from the Models tab first.');
+    showArkNotice(
+        'Local model required',
+        'Download and select a compatible model from the Models page first.');
     location.hash = 'models';
     return;
   }
   if (activeModel.startsWith('cloud:gemini') && !hasGemini) {
-    alert('A Gemini API key is required to use cloud models. Please configure your key in Cloud Providers.');
+    showArkNotice(
+        'Cloud credentials required',
+        'Configure your Gemini API key in Cloud Providers before sending.');
     location.hash = 'models';
     setModelTab(false);
     return;
@@ -1734,6 +1895,7 @@ let modelPollTimer = 0;
 
 function updateLocalModelUI(state: LocalModelState): void {
   currentLocalModelState = state;
+  get('prepared-model-title').textContent = state.displayName;
   const stateTag = get('model-state-tag');
   const progressWrap = get('model-progress-wrap');
   const progress = get<HTMLProgressElement>('model-progress');
@@ -1782,6 +1944,9 @@ function updateLocalModelUI(state: LocalModelState): void {
   }
 
   populateModelSelectors();
+  if (state.installed) {
+    void refreshInstalledModels();
+  }
 
   window.clearTimeout(modelPollTimer);
   if (state.state === 'downloading' || state.state === 'preparing' ||
@@ -1812,7 +1977,8 @@ get('model-download').addEventListener('click', async () => {
   licenseCheckbox.checked = true;
   detail.textContent = 'Starting download…';
   try {
-    const {state} = await pageHandler.startLocalModelDownload(true);
+    const {state} = await pageHandler.startLocalModelDownload(
+        'mlx-community/Llama-3.2-11B-Vision-Instruct-4bit', true);
     updateLocalModelUI(state);
   } catch (err) {
     console.error('Failed to start download in Ark:', err);
@@ -1839,13 +2005,15 @@ get('model-resume').addEventListener('click', async () => {
 });
 
 get('model-delete').addEventListener('click', async () => {
-  if (!confirm('Are you sure you want to delete this model from local storage? This will remove all downloaded model files.')) {
+  const modelId = currentLocalModelState?.modelId || PREPARED_LOCAL_MODEL;
+  const displayName = currentLocalModelState?.displayName || 'this model';
+  if (!await confirmModelDelete(displayName)) {
     return;
   }
   const detail = get('model-download-detail');
   detail.textContent = 'Deleting model files…';
   try {
-    const {state} = await pageHandler.deleteLocalModel();
+    const {state} = await pageHandler.deleteLocalModel(modelId);
     updateLocalModelUI(state);
     detail.textContent = 'Model deleted from local storage.';
   } catch (err) {
@@ -1853,6 +2021,7 @@ get('model-delete').addEventListener('click', async () => {
     detail.textContent = 'Model deleted from local storage.';
     await refreshLocalModelState();
   }
+  await refreshInstalledModels();
 });
 
 const modelSearchForm = get<HTMLFormElement>('model-search-form');
@@ -1866,7 +2035,7 @@ modelSearchForm.addEventListener('submit', async (e) => {
   if (!query) {
     return;
   }
-  modelSearchStatus.textContent = 'Searching Hugging Face for GGUF models…';
+  modelSearchStatus.textContent = 'Searching Hugging Face for MLX and GGUF models…';
   modelSearchResults.replaceChildren();
 
   try {
@@ -1876,7 +2045,7 @@ modelSearchForm.addEventListener('submit', async (e) => {
       return;
     }
     if (results.length === 0) {
-      modelSearchStatus.textContent = `No GGUF models found for "${query}".`;
+      modelSearchStatus.textContent = `No MLX or GGUF models found for "${query}".`;
       return;
     }
     modelSearchStatus.textContent = `Found ${results.length} model${results.length === 1 ? '' : 's'} on Hugging Face:`;
@@ -1894,7 +2063,7 @@ modelSearchForm.addEventListener('submit', async (e) => {
 
       const meta = document.createElement('span');
       meta.className = 'search-result-meta';
-      meta.textContent = `${result.downloads.toLocaleString()} downloads`;
+      meta.textContent = `${result.runtimeBackend === 'mlx-vlm' ? 'MLX (preferred)' : 'GGUF (legacy)'} · ${result.downloads.toLocaleString()} downloads`;
       info.appendChild(meta);
 
       card.appendChild(info);
@@ -1927,22 +2096,33 @@ modelSearchForm.addEventListener('submit', async (e) => {
       const downloadBtn = document.createElement('button');
       downloadBtn.type = 'button';
       downloadBtn.className = 'search-download-btn';
-      if (result.prepared && currentLocalModelState?.installed) {
+      const alreadyInstalled = installedLocalModels.some(
+          model => model.repository === result.id);
+      if (alreadyInstalled) {
         downloadBtn.textContent = 'Installed';
         downloadBtn.disabled = true;
       } else {
         downloadBtn.textContent = 'Download';
-        downloadBtn.addEventListener('click', () => {
-          if (result.prepared) {
-            const licenseCheckbox = get<HTMLInputElement>('model-license');
-            if (!licenseCheckbox.checked) {
-              licenseCheckbox.checked = true;
+        downloadBtn.addEventListener('click', async () => {
+          downloadBtn.disabled = true;
+          downloadBtn.textContent = 'Inspecting…';
+          modelSearchStatus.textContent = `Checking ${result.id} against Ark's bundled runtime…`;
+          try {
+            const {state} = await pageHandler.startLocalModelDownload(result.id, true);
+            updateLocalModelUI(state);
+            if (state.state === 'error') {
+              modelSearchStatus.textContent = state.detail;
+              downloadBtn.textContent = 'Not compatible';
+              return;
             }
-            get('model-download').click();
+            modelSearchStatus.textContent = `${state.displayName} · ${state.variant} · download started in Ark.`;
+            downloadBtn.textContent = 'Downloading';
             get('prepared-model-title').scrollIntoView({behavior: 'smooth'});
-          } else {
-            alert(`Direct download for "${result.id}" will be supported in an upcoming update. Currently, the verified Qwen2.5-VL 7B Instruct model is available below.`);
-            get('prepared-model-title').scrollIntoView({behavior: 'smooth'});
+          } catch (error) {
+            console.warn('Failed to inspect model:', error);
+            modelSearchStatus.textContent = 'Ark could not inspect this repository right now.';
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = 'Retry';
           }
         });
       }
@@ -1957,6 +2137,7 @@ modelSearchForm.addEventListener('submit', async (e) => {
 });
 
 void refreshLocalModelState();
+void refreshInstalledModels();
 
 (window as unknown as {__arkTest?: unknown}).__arkTest = {
   renderMessageBubble,

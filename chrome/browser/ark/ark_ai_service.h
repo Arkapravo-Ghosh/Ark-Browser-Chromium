@@ -60,11 +60,14 @@ class ArkAIService : public KeyedService {
   void SearchLocalModels(std::string query,
                          ArkModelManager::SearchCallback callback);
   void GetLocalModelState(ArkModelManager::StateCallback callback);
-  void StartLocalModelDownload(bool license_accepted,
+  void GetInstalledLocalModels(ArkModelManager::InstalledCallback callback);
+  void StartLocalModelDownload(std::string repository,
+                               bool license_accepted,
                                ArkModelManager::StateCallback callback);
   void PauseLocalModelDownload(ArkModelManager::StateCallback callback);
   void ResumeLocalModelDownload(ArkModelManager::StateCallback callback);
-  void DeleteLocalModel(ArkModelManager::StateCallback callback);
+  void DeleteLocalModel(std::string model_id,
+                        ArkModelManager::StateCallback callback);
 
  private:
   void OnInitialized(bool success);

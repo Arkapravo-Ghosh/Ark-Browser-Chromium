@@ -30,17 +30,18 @@
       <symbol id="mat-download" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></symbol>
       <symbol id="mat-memory" viewBox="0 0 24 24"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></symbol>
       <symbol id="mat-delete" viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></symbol>
+      <symbol id="mat-menu-open" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h12v-2H3v2zm0-7v2h18V6H3zm15.59 3.59L17.17 11l1.42 1.41L22 9l-3.41-3.41L17.17 7l1.42 1.41z"/></symbol>
     </defs>
   </svg>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="shell">
     <aside class="rail" aria-label="Ark workspace">
-      <a class="brand" href="#home" aria-label="Ark home"><img src="ark.svg" alt="" width="32" height="32"><span>ark<span class="brand-dot">.</span></span></a>
-      <button id="new-chat" class="new-chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-add"></use></svg> New chat</button>
+      <div class="rail-header"><a class="brand" href="#home" aria-label="Ark home"><img src="ark.svg" alt="" width="32" height="32"><span>ark<span class="brand-dot">.</span></span></a><button id="rail-toggle" class="rail-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" title="Collapse navigation"><svg class="mat-icon" aria-hidden="true"><use href="#mat-menu-open"></use></svg></button></div>
+      <button id="new-chat" class="new-chat" title="New chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-add"></use></svg><span>New chat</span></button>
       <nav aria-label="Main navigation">
-        <a href="#home" data-route="home"><svg class="mat-icon" aria-hidden="true"><use href="#mat-tab"></use></svg> New tab</a>
-        <a href="#chat" data-route="chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-chat"></use></svg> Chat</a>
-        <a href="#models" data-route="models"><svg class="mat-icon" aria-hidden="true"><use href="#mat-grid"></use></svg> Models</a>
+        <a href="#home" data-route="home" title="New tab"><svg class="mat-icon" aria-hidden="true"><use href="#mat-tab"></use></svg><span>New tab</span></a>
+        <a href="#chat" data-route="chat" title="Chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-chat"></use></svg><span>Chat</span></a>
+        <a href="#models" data-route="models" title="Models"><svg class="mat-icon" aria-hidden="true"><use href="#mat-grid"></use></svg><span>Models</span></a>
       </nav>
       <div class="rail-history" aria-label="Conversation History">
         <div class="history-eyebrow-row"><span class="eyebrow">CHATS</span></div>
@@ -89,7 +90,7 @@
         </section>
         <section id="models-page" class="page settings-page" aria-labelledby="models-title" hidden>
           <div class="page-heading"><div><span class="eyebrow">ON YOUR TERMS</span><h1 id="models-title">Your models.</h1><p>One workspace. Your choice of where AI runs.</p></div></div>
-          <div class="notice"><span class="status-dot"></span><div><strong>Local model manager</strong><p>Search and verified downloads run inside Ark. Prepared models are checked against the bundled runtime before local inference starts.</p></div></div>
+          <div class="notice"><span class="status-dot"></span><div><strong>Local model manager</strong><p>Search and verified downloads run inside Ark. MLX is preferred on Apple Silicon; llama.cpp remains available for legacy GGUF models.</p></div></div>
           <div class="segmented" role="group" aria-label="Model location"><button id="local-tab" aria-pressed="true">Local models</button><button id="cloud-tab" aria-pressed="false">Cloud providers</button></div>
           <div id="cloud-models" hidden><div class="section-heading"><h2>Bring your own connection</h2><span>PLANNED INTEGRATIONS</span></div><div id="provider-grid" class="provider-grid"></div><div class="privacy-note"><strong>You decide what leaves your browser.</strong><p>Cloud chat will send only the conversation and context you explicitly choose to your selected provider. Ark will never silently switch a local conversation to the cloud.</p></div></div>
           <div id="local-models">
@@ -101,14 +102,16 @@
             </form>
             <p id="model-search-status" class="status" role="status"></p>
             <div id="model-search-results" class="model-results" aria-live="polite"></div>
-            <div class="section-heading prepared-heading"><h2>Prepared for Ark</h2><span>APPLE SILICON · Q4_K_M · QWEN2.5-VL</span></div>
+            <div class="section-heading installed-heading"><h2>Installed on this Mac</h2><span id="installed-model-count">CHECKING</span></div>
+            <div id="installed-models" class="installed-models" aria-live="polite"></div>
+            <div class="section-heading prepared-heading"><h2>Prepared for Ark</h2><span>APPLE SILICON · MLX 4-BIT · MLLAMA VISION</span></div>
             <article class="model-card" aria-labelledby="prepared-model-title">
               <div class="model-card-main">
                 <div class="model-icon"><svg class="mat-icon mat-icon-lg" aria-hidden="true"><use href="#mat-memory"></use></svg></div>
                 <div class="model-copy">
-                  <div class="model-title-line"><h3 id="prepared-model-title">Qwen2.5-VL 7B Instruct</h3><span id="model-state-tag" class="tag">Checking…</span></div>
-                  <p>Q4_K_M weights + Q8 vision projector · approximately 5.2 GiB</p>
-                  <p class="model-desc">Multimodal vision, strong instruction following, and an Apache 2.0 license. Verified with Ark's bundled llama.cpp runtime and Apple Silicon Metal acceleration.</p>
+                  <div class="model-title-line"><h3 id="prepared-model-title">Llama 3.2 11B Vision Instruct</h3><span id="model-state-tag" class="tag">Checking…</span></div>
+                  <p>MLX 4-bit weights, tokenizer, and vision processor · approximately 5.6 GiB</p>
+                  <p class="model-desc">Text and image understanding through Ark's preferred bundled MLX-VLM runtime with Apple Silicon Metal acceleration.</p>
                 </div>
               </div>
               <div id="model-progress-wrap" class="model-progress-wrap" hidden>
@@ -116,13 +119,13 @@
                 <div><span id="model-progress-label">0 B of 5.2 GiB</span><span id="model-progress-percent">0%</span></div>
               </div>
               <p id="model-download-detail" class="model-detail" role="status"></p>
-              <label id="model-license-row" class="license-row"><input id="model-license" type="checkbox"> <span>I acknowledge the <a href="https://huggingface.co/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF" target="_blank" rel="noreferrer">model source and Apache 2.0 license</a>.</span></label>
+              <label id="model-license-row" class="license-row"><input id="model-license" type="checkbox"> <span>I acknowledge the <a href="https://huggingface.co/mlx-community/Llama-3.2-11B-Vision-Instruct-4bit" target="_blank" rel="noreferrer">model source and Llama 3.2 license</a>.</span></label>
               <div class="model-actions">
                 <button id="model-download" class="primary" type="button">Download in Ark</button>
                 <button id="model-pause" type="button" hidden>Pause</button>
                 <button id="model-resume" type="button" hidden>Resume</button>
                 <button id="model-delete" class="button-danger" type="button" hidden><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-delete"></use></svg> Delete model</button>
-                <a href="https://huggingface.co/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF" target="_blank" rel="noreferrer">View source</a>
+                <a href="https://huggingface.co/mlx-community/Llama-3.2-11B-Vision-Instruct-4bit" target="_blank" rel="noreferrer">View source</a>
               </div>
             </article>
           </div>
@@ -145,5 +148,7 @@
     <p id="draft-status" class="status" role="status"></p>
   </section>
   <dialog id="clear-dialog" aria-labelledby="clear-title"><h2 id="clear-title">Clear this draft?</h2><p>This text hasn’t been sent. Clearing it cannot be undone.</p><form method="dialog"><button value="cancel" autofocus>Keep writing</button><button class="primary" value="clear">Clear draft</button></form></dialog>
+  <dialog id="ark-notice-dialog" aria-labelledby="ark-notice-title"><h2 id="ark-notice-title">Ark Browser</h2><p id="ark-notice-message"></p><form method="dialog"><button class="primary" value="ok">OK</button></form></dialog>
+  <dialog id="model-delete-dialog" aria-labelledby="model-delete-title"><h2 id="model-delete-title">Delete this model?</h2><p id="model-delete-message">The downloaded weights will be removed. Your chats will stay intact.</p><form method="dialog"><button value="cancel" autofocus>Keep model</button><button class="button-danger" value="delete">Delete model</button></form></dialog>
 </body>
 </html>

@@ -22,15 +22,28 @@ struct ChatMessage {
 
 struct ModelSearchResult {
   string id;
+  string runtime_backend;
   int64 downloads;
   bool gated;
   bool prepared;
+};
+
+struct InstalledLocalModel {
+  string model_id;
+  string display_name;
+  string repository;
+  string revision;
+  string variant;
+  string runtime_backend;
+  double bytes_total;
+  bool runtime_compatible;
 };
 
 struct LocalModelState {
   string model_id;
   string display_name;
   string variant;
+  string runtime_backend;
   string state;
   string detail;
   double bytes_downloaded;
@@ -60,11 +73,13 @@ interface PageHandler {
   OpenSidebarWithDraft(string draft) => (bool success);
   SearchLocalModels(string query) =>
       (array<ModelSearchResult> results, string error);
+  GetInstalledLocalModels() => (array<InstalledLocalModel> models);
   GetLocalModelState() => (LocalModelState state);
-  StartLocalModelDownload(bool license_accepted) => (LocalModelState state);
+  StartLocalModelDownload(string repository, bool license_accepted)
+      => (LocalModelState state);
   PauseLocalModelDownload() => (LocalModelState state);
   ResumeLocalModelDownload() => (LocalModelState state);
-  DeleteLocalModel() => (LocalModelState state);
+  DeleteLocalModel(string model_id) => (LocalModelState state);
   SendChatPrompt(string conversation_id, string message, string? image_data)
       => (string response, bool success);
 };

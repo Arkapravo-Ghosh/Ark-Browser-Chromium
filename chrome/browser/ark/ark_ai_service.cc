@@ -233,7 +233,10 @@ void ArkAIService::SendChatPrompt(std::string conversation_id,
                     [](ArkAIService* ai, std::string cid, std::string prompt,
                        std::optional<std::string> image, PromptCallback prompt_cb,
                        ConversationState conv) {
-                      const std::string model_name = conv.model_name;
+                      const std::string model_name =
+                          conv.model_name.empty()
+                              ? "local:mlx:llama-3.2-11b-vision-instruct"
+                              : conv.model_name;
                       ai->store_.AsyncCall(&ConversationStore::GetMessages)
                           .WithArgs(cid)
                           .Then(base::BindOnce(
@@ -254,7 +257,7 @@ void ArkAIService::SendChatPrompt(std::string conversation_id,
                                 }
 
                                 ai->inference_service_->SendPrompt(
-                                    cid, prompt, image, history,
+                                    cid, model_name, prompt, image, history,
                                     base::BindOnce(&ArkAIService::OnPromptCompleted,
                                                    ai->weak_ptr_factory_.GetWeakPtr(),
                                                    cid, model_name,
@@ -294,10 +297,17 @@ void ArkAIService::GetLocalModelState(ArkModelManager::StateCallback callback) {
   model_manager_->GetLocalModelState(std::move(callback));
 }
 
+void ArkAIService::GetInstalledLocalModels(
+    ArkModelManager::InstalledCallback callback) {
+  model_manager_->GetInstalledModels(std::move(callback));
+}
+
 void ArkAIService::StartLocalModelDownload(
+    std::string repository,
     bool license_accepted,
     ArkModelManager::StateCallback callback) {
-  model_manager_->StartDownload(license_accepted, std::move(callback));
+  model_manager_->StartDownload(std::move(repository), license_accepted,
+                                std::move(callback));
 }
 
 void ArkAIService::PauseLocalModelDownload(
@@ -310,11 +320,13 @@ void ArkAIService::ResumeLocalModelDownload(
   model_manager_->ResumeDownload(std::move(callback));
 }
 
-void ArkAIService::DeleteLocalModel(ArkModelManager::StateCallback callback) {
+void ArkAIService::DeleteLocalModel(
+    std::string model_id,
+    ArkModelManager::StateCallback callback) {
   if (inference_service_) {
     inference_service_->StopServer();
   }
-  model_manager_->DeleteModel(std::move(callback));
+  model_manager_->DeleteModel(std::move(model_id), std::move(callback));
 }
 
 void ArkAIService::OnInitialized(bool success) {

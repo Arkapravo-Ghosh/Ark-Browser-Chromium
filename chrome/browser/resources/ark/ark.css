@@ -160,6 +160,33 @@ p { margin-top: 0; }
   width: 220px;
   height: 100vh;
   overflow: hidden;
+  transition: width 180ms ease, flex-basis 180ms ease, padding 180ms ease;
+}
+
+.rail-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 38px;
+  margin: 0 0 42px 9px;
+}
+
+.rail-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  display: flex;
+  flex: 0 0 36px;
+  height: 36px;
+  justify-content: center;
+  padding: 0;
+}
+
+.rail-toggle:hover {
+  background: var(--surface);
+  color: var(--ink);
 }
 
 .brand {
@@ -170,7 +197,7 @@ p { margin-top: 0; }
   gap: 10px;
   letter-spacing: -2px;
   line-height: 1;
-  margin: 0 0 42px 9px;
+  margin: 0;
   width: fit-content;
 }
 
@@ -395,6 +422,49 @@ nav a[aria-current='page'] {
   max-height: 100vh;
   overflow: hidden;
   width: calc(100% - 220px);
+  transition: margin-left 180ms ease, width 180ms ease;
+}
+
+.rail-collapsed .rail {
+  flex-basis: 72px;
+  padding: 32px 14px 22px;
+  width: 72px;
+}
+
+.rail-collapsed .workspace {
+  margin-left: 72px;
+  width: calc(100% - 72px);
+}
+
+.rail-collapsed .rail-header {
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.rail-collapsed .brand span,
+.rail-collapsed .new-chat span,
+.rail-collapsed .rail nav a span,
+.rail-collapsed .rail-history,
+.rail-collapsed .rail-bottom {
+  display: none;
+}
+
+.rail-collapsed .brand {
+  display: none;
+}
+
+.rail-collapsed .rail-toggle .mat-icon {
+  transform: rotate(180deg);
+}
+
+.rail-collapsed .new-chat,
+.rail-collapsed .rail nav a {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.rail-collapsed .new-chat {
+  height: 44px;
 }
 
 .topbar {
@@ -1047,8 +1117,11 @@ body:has(#chat-page:not([hidden])) footer {
 }
 
 .message-user {
+  align-items: flex-end;
   align-self: flex-end;
+  inline-size: fit-content;
   max-width: 82%;
+  min-width: 0;
 }
 
 .message-user .message-bubble {
@@ -1058,8 +1131,26 @@ body:has(#chat-page:not([hidden])) footer {
   font-size: 14px;
   line-height: 1.5;
   padding: 10px 16px;
-  white-space: pre-wrap;
+  max-width: 100%;
+  min-width: 0;
+  width: fit-content;
+  white-space: normal;
   word-break: break-word;
+}
+
+.message-user .md-heading,
+.message-user .md-blockquote {
+  color: var(--paper);
+}
+
+.message-user .md-inline-code {
+  background: color-mix(in srgb, var(--paper) 15%, transparent);
+  border-color: color-mix(in srgb, var(--paper) 28%, transparent);
+  color: var(--paper);
+}
+
+.message-user .message-bubble a {
+  color: var(--paper);
 }
 
 .message-assistant {
@@ -1727,6 +1818,16 @@ button.primary:hover:not(:disabled) {
     width: calc(100% - 180px);
   }
 
+  .rail-collapsed .rail {
+    flex-basis: 72px;
+    width: 72px;
+  }
+
+  .rail-collapsed .workspace {
+    margin-left: 72px;
+    width: calc(100% - 72px);
+  }
+
   .home-page,
   .settings-page,
   .chat-page { width: calc(100% - 48px); }
@@ -1745,7 +1846,8 @@ button.primary:hover:not(:disabled) {
     width: 64px;
   }
 
-  .brand { margin: 0 0 24px; }
+  .rail-header { margin: 0 0 24px; }
+  .rail-toggle { display: none; }
 
   .brand > span,
   .new-chat,
@@ -1841,6 +1943,11 @@ button.primary:hover:not(:disabled) {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .rail,
+  .workspace {
+    transition: none;
   }
 }
 
@@ -2063,6 +2170,49 @@ button.primary:hover:not(:disabled) {
 
 .prepared-heading {
   margin-top: 32px;
+}
+
+.installed-heading { margin-top: 30px; }
+
+.installed-models {
+  display: grid;
+  gap: 10px;
+}
+
+.installed-model-card {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 16px 18px;
+}
+
+.installed-model-card h3 {
+  font-size: 14px;
+  margin: 0 0 5px;
+}
+
+.installed-model-card p {
+  color: var(--muted);
+  font-size: 11px;
+  margin: 0;
+}
+
+.installed-model-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.installed-empty {
+  border: 1px dashed var(--line);
+  border-radius: 11px;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 18px;
 }
 
 .model-card {

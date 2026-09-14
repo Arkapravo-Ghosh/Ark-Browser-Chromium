@@ -79,7 +79,8 @@ std::vector<ark::mojom::ChatMessagePtr> ToMojom(
 
 ark::mojom::LocalModelStatePtr ToMojom(ark::LocalModelState state) {
   return ark::mojom::LocalModelState::New(
-      state.model_id, state.display_name, state.variant, state.state,
+      state.model_id, state.display_name, state.variant,
+      state.runtime_backend, state.state,
       state.detail, state.bytes_downloaded, state.bytes_total, state.can_start,
       state.can_pause, state.can_resume, state.installed,
       state.runtime_compatible);
@@ -91,7 +92,23 @@ std::vector<ark::mojom::ModelSearchResultPtr> ToMojom(
   converted.reserve(results.size());
   for (auto& result : results) {
     converted.push_back(ark::mojom::ModelSearchResult::New(
-        std::move(result.id), result.downloads, result.gated, result.prepared));
+        std::move(result.id), std::move(result.runtime_backend),
+        result.downloads, result.gated, result.prepared));
+  }
+  return converted;
+}
+
+std::vector<ark::mojom::InstalledLocalModelPtr> ToMojom(
+    std::vector<ark::InstalledLocalModel> models) {
+  std::vector<ark::mojom::InstalledLocalModelPtr> converted;
+  converted.reserve(models.size());
+  for (auto& model : models) {
+    converted.push_back(ark::mojom::InstalledLocalModel::New(
+        std::move(model.model_id), std::move(model.display_name),
+        std::move(model.repository), std::move(model.revision),
+        std::move(model.variant), std::move(model.runtime_backend),
+        model.bytes_total,
+        model.runtime_compatible));
   }
   return converted;
 }
@@ -436,11 +453,23 @@ void ArkUI::GetLocalModelState(GetLocalModelStateCallback callback) {
           std::move(callback)));
 }
 
-void ArkUI::StartLocalModelDownload(bool license_accepted,
+void ArkUI::GetInstalledLocalModels(
+    GetInstalledLocalModelsCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->GetInstalledLocalModels(base::BindOnce(
+          [](GetInstalledLocalModelsCallback callback,
+             std::vector<ark::InstalledLocalModel> models) {
+            std::move(callback).Run(ToMojom(std::move(models)));
+          },
+          std::move(callback)));
+}
+
+void ArkUI::StartLocalModelDownload(const std::string& repository,
+                                    bool license_accepted,
                                     StartLocalModelDownloadCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
       ->StartLocalModelDownload(
-          license_accepted,
+          repository, license_accepted,
           base::BindOnce(
               [](StartLocalModelDownloadCallback callback,
                  ark::LocalModelState state) {
@@ -470,9 +499,10 @@ void ArkUI::ResumeLocalModelDownload(
           std::move(callback)));
 }
 
-void ArkUI::DeleteLocalModel(DeleteLocalModelCallback callback) {
+void ArkUI::DeleteLocalModel(const std::string& model_id,
+                             DeleteLocalModelCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
-      ->DeleteLocalModel(base::BindOnce(
+      ->DeleteLocalModel(model_id, base::BindOnce(
           [](DeleteLocalModelCallback callback, ark::LocalModelState state) {
             std::move(callback).Run(ToMojom(std::move(state)));
           },
