@@ -57,6 +57,9 @@ class ArkAIService : public KeyedService {
                       std::string message,
                       std::optional<std::string> image_data,
                       PromptCallback callback);
+  void GenerateConversationTitle(std::string conversation_id,
+                                 std::string user_message,
+                                 PromptCallback callback);
   void SearchLocalModels(std::string query,
                          ArkModelManager::SearchCallback callback);
   void GetLocalModelState(ArkModelManager::StateCallback callback);

@@ -518,6 +518,15 @@ void ArkUI::SendChatPrompt(const std::string& conversation_id,
                        std::move(callback));
 }
 
+void ArkUI::GenerateConversationTitle(
+    const std::string& conversation_id,
+    const std::string& user_message,
+    GenerateConversationTitleCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->GenerateConversationTitle(conversation_id, user_message,
+                                   std::move(callback));
+}
+
 void ArkUI::OpenSidebarWithDraft(const std::string& draft,
                                  OpenSidebarWithDraftCallback callback) {
   if (draft.empty() || draft.size() > 32000) {

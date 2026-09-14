@@ -217,9 +217,9 @@ ArkInferenceService::ProcessRunResult ArkInferenceService::RunPromptInProcess(
   const base::FilePath prompt_path =
       temp_dir.GetPath().AppendASCII("prompt.txt");
   std::string full_prompt =
-      "You are Ark AI, a smart, capable, and helpful personal AI assistant "
-      "running locally inside Ark Browser. Provide direct, natural, and "
-      "accurate answers without unnecessary preamble.\n\n";
+      "You are a helpful assistant. If you include code, use a fenced Markdown "
+      "block with the language immediately after the opening backticks, for "
+      "example ```csharp.\n\n";
   for (const ChatMessage& message : history) {
     full_prompt.append(message.role);
     full_prompt.append(": ");
@@ -295,7 +295,7 @@ ArkInferenceService::ProcessRunResult ArkInferenceService::RunPromptInProcess(
     command.AppendArg("-f");
     command.AppendArgPath(prompt_path);
     command.AppendArg("-n");
-    command.AppendArg("512");
+    command.AppendArg("1024");
     command.AppendArg("--temp");
     command.AppendArg("0.7");
     command.AppendArg("--no-display-prompt");

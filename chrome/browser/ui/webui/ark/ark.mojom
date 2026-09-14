@@ -82,4 +82,6 @@ interface PageHandler {
   DeleteLocalModel(string model_id) => (LocalModelState state);
   SendChatPrompt(string conversation_id, string message, string? image_data)
       => (string response, bool success);
+  GenerateConversationTitle(string conversation_id, string user_message)
+      => (string title, bool success);
 };

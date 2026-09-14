@@ -82,6 +82,10 @@ class ArkSidePanelUI : public TopChromeWebUIController,
                       const std::string& message,
                       const std::optional<std::string>& image_data,
                       SendChatPromptCallback callback) override;
+  void GenerateConversationTitle(
+      const std::string& conversation_id,
+      const std::string& user_message,
+      GenerateConversationTitleCallback callback) override;
   void OpenSidebarWithDraft(const std::string& draft,
                             OpenSidebarWithDraftCallback callback) override;
   void OnCurrentConversationForSidebar(std::string draft,

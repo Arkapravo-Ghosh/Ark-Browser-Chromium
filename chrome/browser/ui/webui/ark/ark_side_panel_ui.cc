@@ -392,6 +392,15 @@ void ArkSidePanelUI::SendChatPrompt(
                        std::move(callback));
 }
 
+void ArkSidePanelUI::GenerateConversationTitle(
+    const std::string& conversation_id,
+    const std::string& user_message,
+    GenerateConversationTitleCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->GenerateConversationTitle(conversation_id, user_message,
+                                  std::move(callback));
+}
+
 void ArkSidePanelUI::OpenSidebarWithDraft(
     const std::string& draft,
     OpenSidebarWithDraftCallback callback) {

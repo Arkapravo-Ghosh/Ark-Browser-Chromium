@@ -20,9 +20,11 @@ const dialog = get<HTMLDialogElement>('clear-dialog');
 const GEMINI_KEY_STORAGE = 'ark_gemini_api_key';
 const SELECTED_MODEL_STORAGE = 'ark_selected_model';
 const RAIL_COLLAPSED_STORAGE = 'ark_rail_collapsed';
+const RAIL_WIDTH_STORAGE = 'ark_rail_width';
 const pageHandler = PageHandler.getRemote();
 let currentRoute: Route = 'home';
 let newChatPending = false;
+let freshChat = false;
 let conversationId = '';
 let conversationsList: ConversationState[] = [];
 let currentMessages: ChatMessage[] = [];
@@ -55,10 +57,41 @@ function setRailCollapsed(collapsed: boolean): void {
   localStorage.setItem(RAIL_COLLAPSED_STORAGE, String(collapsed));
 }
 
+function setRailWidth(width: number): void {
+  const maxWidth = Math.max(260, Math.min(360, window.innerWidth - 120));
+  const nextWidth = Math.round(Math.max(180, Math.min(maxWidth, width)));
+  document.documentElement.style.setProperty('--rail-expanded-width', `${nextWidth}px`);
+  localStorage.setItem(RAIL_WIDTH_STORAGE, String(nextWidth));
+  get('rail-resize').setAttribute('aria-valuenow', String(nextWidth));
+}
+
 get('rail-toggle').addEventListener('click', () => {
   setRailCollapsed(!document.documentElement.classList.contains('rail-collapsed'));
 });
 setRailCollapsed(localStorage.getItem(RAIL_COLLAPSED_STORAGE) === 'true');
+const storedRailWidth = Number(localStorage.getItem(RAIL_WIDTH_STORAGE));
+setRailWidth(Number.isFinite(storedRailWidth) && storedRailWidth > 0 ? storedRailWidth : 220);
+
+const railResize = get('rail-resize');
+let resizeStartX = 0;
+let resizeStartWidth = 220;
+railResize.addEventListener('pointerdown', (event: PointerEvent) => {
+  if (document.documentElement.classList.contains('rail-collapsed')) return;
+  resizeStartX = event.clientX;
+  resizeStartWidth = parseFloat(getComputedStyle(document.documentElement)
+                                    .getPropertyValue('--rail-expanded-width')) || 220;
+  railResize.setPointerCapture(event.pointerId);
+  document.documentElement.classList.add('rail-resizing');
+});
+railResize.addEventListener('pointermove', (event: PointerEvent) => {
+  if (!railResize.hasPointerCapture(event.pointerId)) return;
+  setRailWidth(resizeStartWidth + event.clientX - resizeStartX);
+});
+railResize.addEventListener('pointerup', (event: PointerEvent) => {
+  if (!railResize.hasPointerCapture(event.pointerId)) return;
+  railResize.releasePointerCapture(event.pointerId);
+  document.documentElement.classList.remove('rail-resizing');
+});
 
 function showArkNotice(title: string, message: string): void {
   get('ark-notice-title').textContent = title;
@@ -166,23 +199,6 @@ function determineSelectedModel(hasGemini: boolean): string {
   return PREPARED_LOCAL_MODEL;
 }
 
-function getModelDisplayName(modelId: string): string {
-  const installed = installedLocalModels.find(model => model.modelId === modelId);
-  if (installed) {
-    return `${installed.displayName} (Local)`;
-  }
-  switch (modelId) {
-    case PREPARED_LOCAL_MODEL:
-      return 'Llama 3.2 11B Vision Instruct (Local · MLX)';
-    case 'cloud:gemini-2.5-flash':
-      return 'Gemini 2.5 Flash (Cloud)';
-    case 'cloud:gemini-2.5-pro':
-      return 'Gemini 2.5 Pro (Cloud)';
-    default:
-      return 'Choose a model';
-  }
-}
-
 function updateModelStatusUI(modelId: string): void {
   activeModel = modelId;
   const installed = installedLocalModels.find(model => model.modelId === modelId);
@@ -231,82 +247,114 @@ function updateModelStatusUI(modelId: string): void {
   updateSendButtonState();
 }
 
-function populateModelSelectors(): void {
-  const geminiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
-  const hasGemini = Boolean(geminiKey);
-
-  const selected = determineSelectedModel(hasGemini);
-  activeModel = selected;
-
-  const selects = [
-    get<HTMLSelectElement>('composer-model-select'),
-    get<HTMLSelectElement>('home-model-select'),
-  ];
-
-  for (const sel of selects) {
-    sel.replaceChildren();
-
-    const localGroup = document.createElement('optgroup');
-    localGroup.label = 'Local Models (Apple Silicon Metal)';
-    if (installedLocalModels.length === 0) {
-      const empty = document.createElement('option');
-      empty.value = PREPARED_LOCAL_MODEL;
-      empty.textContent = 'No local model installed · Open Models';
-      localGroup.appendChild(empty);
-    } else {
-      for (const model of installedLocalModels) {
-        const option = document.createElement('option');
-        option.value = model.modelId;
-        option.disabled = !isSelectableLocalModel(model);
-        option.textContent = `${model.displayName} · ${model.variant} · ${model.runtimeBackend}${
-            model.runtimeCompatible ? '' : ' · Incompatible'}`;
-        localGroup.appendChild(option);
-      }
-    }
-    sel.appendChild(localGroup);
-
-    const cloudGroup = document.createElement('optgroup');
-    cloudGroup.label = 'Cloud Models (Google AI Studio)';
-    const flashOpt = document.createElement('option');
-    flashOpt.value = 'cloud:gemini-2.5-flash';
-    flashOpt.textContent = hasGemini ?
-        'Gemini 2.5 Flash (Cloud) · Ready' :
-        'Gemini 2.5 Flash (Cloud) · Key Required';
-    cloudGroup.appendChild(flashOpt);
-
-    const proOpt = document.createElement('option');
-    proOpt.value = 'cloud:gemini-2.5-pro';
-    proOpt.textContent = hasGemini ?
-        'Gemini 2.5 Pro (Cloud) · Ready' :
-        'Gemini 2.5 Pro (Cloud) · Key Required';
-    cloudGroup.appendChild(proOpt);
-    sel.appendChild(cloudGroup);
-
-    const actionGroup = document.createElement('optgroup');
-    actionGroup.label = 'Settings';
-    const manageOpt = document.createElement('option');
-    manageOpt.value = 'action:manage';
-    manageOpt.textContent = '⚙ Manage models…';
-    actionGroup.appendChild(manageOpt);
-    sel.appendChild(actionGroup);
-
-    sel.value = selected;
+function getModelDisplayName(modelId: string): string {
+  const installed = installedLocalModels.find(model => model.modelId === modelId);
+  if (installed) {
+    return `${installed.displayName} (Local)`;
   }
-
-  updateModelStatusUI(selected);
+  switch (modelId) {
+    case PREPARED_LOCAL_MODEL:
+      return 'Llama 3.2 11B Vision Instruct (Local · MLX)';
+    case 'cloud:gemini-2.5-flash':
+      return 'Gemini 2.5 Flash (Cloud)';
+    case 'cloud:gemini-2.5-pro':
+      return 'Gemini 2.5 Pro (Cloud)';
+    default:
+      return 'Choose a model';
+  }
 }
 
-function onModelSelectChange(event: Event): void {
-  const target = event.target as HTMLSelectElement;
-  const value = target.value;
+interface ModelMenu {
+  root: HTMLElement;
+  trigger: HTMLButtonElement;
+  value: HTMLElement;
+  listbox: HTMLElement;
+}
+
+const modelMenus: ModelMenu[] = [
+  {
+    root: get('composer-model-picker'),
+    trigger: get<HTMLButtonElement>('composer-model-trigger'),
+    value: get('composer-model-value'),
+    listbox: get('composer-model-menu'),
+  },
+  {
+    root: get('home-model-picker'),
+    trigger: get<HTMLButtonElement>('home-model-trigger'),
+    value: get('home-model-value'),
+    listbox: get('home-model-menu'),
+  },
+];
+
+interface ModelMenuEntry {
+  value: string;
+  name: string;
+  meta: string;
+  disabled?: boolean;
+}
+
+function getModelMenuEntries(hasGemini: boolean): Array<{label: string; entries: ModelMenuEntry[]}> {
+  const localEntries: ModelMenuEntry[] = installedLocalModels.length === 0 ? [{
+    value: PREPARED_LOCAL_MODEL,
+    name: 'No local model installed',
+    meta: 'Open Models to download',
+  }] : installedLocalModels.map(model => ({
+    value: model.modelId,
+    name: model.displayName,
+    meta: `${model.variant} · ${model.runtimeBackend}${model.runtimeCompatible ? '' : ' · Incompatible'}`,
+    disabled: !isSelectableLocalModel(model),
+  }));
+  return [
+    {label: 'Local Models · Apple Silicon Metal', entries: localEntries},
+    {label: 'Cloud Models · Google AI Studio', entries: [
+      {
+        value: 'cloud:gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        meta: hasGemini ? 'Cloud · Ready' : 'Cloud · API key required',
+      },
+      {
+        value: 'cloud:gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        meta: hasGemini ? 'Cloud · Ready' : 'Cloud · API key required',
+      },
+    ]},
+    {label: 'Settings', entries: [{
+      value: 'action:manage',
+      name: 'Manage models',
+      meta: 'Open model settings',
+    }]},
+  ];
+}
+
+function closeModelMenus(): void {
+  for (const menu of modelMenus) {
+    menu.listbox.hidden = true;
+    menu.trigger.ariaExpanded = 'false';
+  }
+}
+
+function setModelMenuValues(value: string): void {
+  const hasGemini = Boolean((localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim());
+  const entries = getModelMenuEntries(hasGemini).flatMap(group => group.entries);
+  const selected = entries.find(entry => entry.value === value);
+  for (const menu of modelMenus) {
+    menu.value.textContent = selected ? `${selected.name} · ${selected.meta}` : 'Choose a model';
+    for (const option of menu.listbox.querySelectorAll<HTMLElement>('[role="option"]')) {
+      const isSelected = option.dataset['modelValue'] === value;
+      option.ariaSelected = String(isSelected);
+      option.querySelector<HTMLElement>('.model-menu-check')!.textContent = isSelected ? '✓' : '';
+    }
+  }
+}
+
+function chooseModel(value: string): void {
+  closeModelMenus();
   if (value === 'action:manage') {
-    target.value = activeModel;
     location.hash = 'models';
     return;
   }
   localStorage.setItem(SELECTED_MODEL_STORAGE, value);
-  get<HTMLSelectElement>('composer-model-select').value = value;
-  get<HTMLSelectElement>('home-model-select').value = value;
+  setModelMenuValues(value);
   updateModelStatusUI(value);
   if (conversationId) {
     void pageHandler.updateConversationModel(conversationId, value);
@@ -317,15 +365,107 @@ function onModelSelectChange(event: Event): void {
   }
 }
 
-get('composer-model-select').addEventListener('change', onModelSelectChange);
-get('home-model-select').addEventListener('change', onModelSelectChange);
-populateModelSelectors();
+function renderModelMenus(selected: string): void {
+  const geminiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+  const hasGemini = Boolean(geminiKey);
+  const groups = getModelMenuEntries(hasGemini);
+  activeModel = selected;
+  for (const menu of modelMenus) {
+    menu.listbox.replaceChildren();
+    for (const group of groups) {
+      const heading = document.createElement('div');
+      heading.className = 'model-menu-group-label';
+      heading.textContent = group.label;
+      menu.listbox.appendChild(heading);
+      for (const entry of group.entries) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'model-menu-option';
+        option.setAttribute('role', 'option');
+        option.dataset['modelValue'] = entry.value;
+        option.ariaSelected = String(entry.value === selected);
+        option.disabled = Boolean(entry.disabled);
+        const check = document.createElement('span');
+        check.className = 'model-menu-check';
+        check.setAttribute('aria-hidden', 'true');
+        check.textContent = entry.value === selected ? '✓' : '';
+        const copy = document.createElement('span');
+        copy.className = 'model-menu-option-copy';
+        const name = document.createElement('span');
+        name.className = 'model-menu-option-name';
+        name.textContent = entry.name;
+        const meta = document.createElement('span');
+        meta.className = 'model-menu-option-meta';
+        meta.textContent = entry.meta;
+        copy.append(name, meta);
+        option.append(check, copy);
+        option.addEventListener('click', () => chooseModel(entry.value));
+        menu.listbox.appendChild(option);
+      }
+    }
+  }
+  setModelMenuValues(selected);
+  updateModelStatusUI(selected);
+}
+
+function refreshModelMenus(): void {
+  renderModelMenus(determineSelectedModel(
+      Boolean(localStorage.getItem(GEMINI_KEY_STORAGE)?.trim())));
+}
+
+function openModelMenu(menu: ModelMenu): void {
+  const isOpen = !menu.listbox.hidden;
+  closeModelMenus();
+  if (isOpen) {
+    return;
+  }
+  menu.listbox.hidden = false;
+  menu.trigger.ariaExpanded = 'true';
+  const selected = menu.listbox.querySelector<HTMLElement>('[aria-selected="true"]');
+  selected?.focus();
+}
+
+for (const menu of modelMenus) {
+  menu.trigger.addEventListener('click', () => openModelMenu(menu));
+  menu.trigger.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      openModelMenu(menu);
+    }
+  });
+  menu.listbox.addEventListener('keydown', event => {
+    const options = [...menu.listbox.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)')];
+    const current = options.indexOf(document.activeElement as HTMLButtonElement);
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeModelMenus();
+      menu.trigger.focus();
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const next = event.key === 'ArrowDown' ? (current + 1) % options.length :
+                                                  (current - 1 + options.length) % options.length;
+      options[next]?.focus();
+    }
+    if ((event.key === 'Enter' || event.key === ' ') && document.activeElement instanceof HTMLButtonElement) {
+      event.preventDefault();
+      document.activeElement.click();
+    }
+  });
+}
+document.addEventListener('pointerdown', event => {
+  if (!modelMenus.some(menu => menu.root.contains(event.target as Node))) {
+    closeModelMenus();
+  }
+});
+refreshModelMenus();
 
 async function refreshInstalledModels(): Promise<void> {
   try {
     const {models} = await pageHandler.getInstalledLocalModels();
     installedLocalModels = models;
-    populateModelSelectors();
+    refreshModelMenus();
     renderInstalledModels();
   } catch (error) {
     console.warn('Failed to enumerate installed local models:', error);
@@ -363,7 +503,7 @@ function renderInstalledModels(): void {
     useButton.addEventListener('click', () => {
       localStorage.setItem(SELECTED_MODEL_STORAGE, model.modelId);
       updateModelStatusUI(model.modelId);
-      populateModelSelectors();
+      refreshModelMenus();
       if (conversationId) void pageHandler.updateConversationModel(conversationId, model.modelId);
       renderInstalledModels();
     });
@@ -493,6 +633,23 @@ function attachCopyHandlers(container: HTMLElement): void {
   });
 }
 
+function inferCodeLanguage(code: string): string {
+  if (/\b(using\s+System|namespace\s+[A-Za-z_]|Console\.(Write|Read)|\b(public|private|internal)\s+(class|interface|record))\b/.test(code)) {
+    return 'csharp';
+  }
+  if (/\b(def|elif|print|input)\b|:\s*$/m.test(code) &&
+      /\b(def|print|input|import)\b/.test(code)) {
+    return 'python';
+  }
+  if (/\b(const|let|var|function|console\.log)\b/.test(code)) {
+    return 'javascript';
+  }
+  if (/\b(SELECT|INSERT|UPDATE|DELETE)\b/i.test(code)) {
+    return 'sql';
+  }
+  return 'code';
+}
+
 function renderMarkdown(text: string): string {
   if (!text) {
     return '';
@@ -508,7 +665,11 @@ function renderMarkdown(text: string): string {
     if (cleanCode.endsWith('\n')) {
       cleanCode = cleanCode.slice(0, -1);
     }
-    codeBlocks.push({lang: lang || 'code', code: cleanCode});
+    const normalizedLang = (lang || inferCodeLanguage(cleanCode)).toLowerCase();
+    const isCSharp = /\b(using\s+System|namespace\s+[A-Za-z_]|Console\.(Write|Read)|\b(public|private|internal)\s+(class|interface|record))\b/.test(cleanCode);
+    const displayLang = isCSharp && (normalizedLang === 'c' || normalizedLang === 'cpp' || normalizedLang === 'code') ?
+        'csharp' : normalizedLang;
+    codeBlocks.push({lang: displayLang, code: cleanCode});
     return `\n\n%%%CODE_BLOCK_${codeBlocks.length - 1}%%%\n\n`;
   });
 
@@ -750,8 +911,9 @@ function renderConversationList(): void {
   for (const conv of conversationsList) {
     const item = document.createElement('div');
     item.className = 'conversation-item';
+    item.dataset['conversationId'] = conv.id;
     item.setAttribute('role', 'listitem');
-    if (conv.id === conversationId) {
+    if (currentRoute === 'chat' && conv.id === conversationId) {
       item.classList.add('active');
     }
 
@@ -805,6 +967,7 @@ async function switchToConversation(id: string): Promise<void> {
   try {
     const {state} = await pageHandler.switchConversation(id);
     if (state && state.id) {
+      freshChat = false;
       conversationId = state.id;
       draft.value = state.draft || '';
       clearButton.disabled = !draft.value;
@@ -812,13 +975,7 @@ async function switchToConversation(id: string): Promise<void> {
       get('draft-status').textContent = '';
       if (state.modelName) {
         updateModelStatusUI(state.modelName);
-        const selects = [
-          get<HTMLSelectElement>('composer-model-select'),
-          get<HTMLSelectElement>('home-model-select'),
-        ];
-        for (const sel of selects) {
-          sel.value = state.modelName;
-        }
+        setModelMenuValues(state.modelName);
       }
       if (location.hash !== '#chat') {
         location.hash = 'chat';
@@ -851,33 +1008,29 @@ async function deleteConversation(id: string): Promise<void> {
   }
 }
 
-async function createNewChat(): Promise<void> {
+function createNewChat(): void {
   if (isGenerating) {
     return;
   }
-  try {
-    const {state} = await pageHandler.createConversation(activeModel);
-    if (state && state.id) {
-      conversationId = state.id;
-      draft.value = '';
-      saveDraft();
-      updateSendButtonState();
-      currentMessages = [];
-      const chatMessages = get('chat-messages');
-      chatMessages.replaceChildren();
-      chatMessages.hidden = true;
-      get('chat-page').classList.remove('has-messages');
-      get('chat-empty').hidden = false;
-      if (location.hash !== '#chat') {
-        location.hash = 'chat';
-        renderRoute(false);
-      }
-      await loadConversations();
-      draft.focus();
-    }
-  } catch (err) {
-    console.warn('Failed to create new chat:', err);
+  // Keep an empty new chat transient. The backend conversation is created by
+  // sendMessage() only when the first prompt is submitted.
+  freshChat = true;
+  conversationId = '';
+  draft.value = '';
+  saveDraft();
+  updateSendButtonState();
+  currentMessages = [];
+  const chatMessages = get('chat-messages');
+  chatMessages.replaceChildren();
+  chatMessages.hidden = true;
+  get('chat-page').classList.remove('has-messages');
+  get('chat-empty').hidden = false;
+  if (location.hash !== '#chat') {
+    location.hash = 'chat';
+    renderRoute(false);
   }
+  renderConversationList();
+  draft.focus();
 }
 
 async function streamTextToBubble(fullText: string, bubble: HTMLElement): Promise<string> {
@@ -902,305 +1055,85 @@ async function streamTextToBubble(fullText: string, bubble: HTMLElement): Promis
 
 function synthesizeLocalText(prompt: string, history: ChatMessage[] = []): string {
   const p = prompt.trim();
+  if (!p) return "How can I help?";
+
+  const previousUser = [...history].reverse().find(m => m.role === 'user' && m.content.trim() !== '');
   const lower = p.toLowerCase();
 
-  // Find previous user and assistant messages from history
-  const userMessages = history.filter(m => m.role === 'user');
-  const isCurrentPromptInHistory = userMessages.length > 0 && userMessages[userMessages.length - 1]?.content === prompt;
-  const prevUserMsg = isCurrentPromptInHistory ?
-      (userMessages.length > 1 ? userMessages[userMessages.length - 2] : null) :
-      (userMessages.length > 0 ? userMessages[userMessages.length - 1] : null);
-
-  const assistantMessages = history.filter(m => m.role === 'assistant');
-  const prevAssistantMsg = assistantMessages.length > 0 ? assistantMessages[assistantMessages.length - 1] : null;
-
-  // 1. Inquiries about prior conversation / history
-  if (/(what\s+(did|was)\s+(i|my)\s+(ask|say|prompt|question)|what\s+was\s+my\s+previous\s+(message|question)|repeat\s+(what\s+i\s+said|my\s+question))/i.test(lower)) {
-    if (prevUserMsg) {
-      return `In your previous message, you asked:\n\n> "${prevUserMsg.content}"\n\nHow would you like to follow up on this?`;
-    }
-    return "This is the first question in our conversation! There aren't any earlier messages before this.";
+  if (/what\s+(did|was)\s+(i|my)\s+(ask|say|question)|repeat\s+my\s+question/i.test(lower)) {
+    return previousUser ?
+        `Your previous question was: "${previousUser.content}"` :
+        "This is the first message in this chat.";
   }
 
-  if (/(what\s+(did\s+you|was\s+your)\s+(say|reply|response|answer)|repeat\s+(what\s+you\s+said|your\s+response|what\s+you\s+answered))/i.test(lower)) {
-    if (prevAssistantMsg) {
-      return `In my previous response, I shared:\n\n${prevAssistantMsg.content}`;
-    }
-    return "I haven't given an earlier response in this chat yet. What would you like to discuss?";
-  }
-
-  if (/(summarize|summary\s+of)\s+(our\s+chat|this\s+chat|our\s+conversation|what\s+we\s+discussed|the\s+discussion)/i.test(lower)) {
-    const turns: string[] = [];
-    for (const m of history) {
-      if (m.content === prompt) continue;
-      const preview = m.content.length > 140 ? m.content.slice(0, 140) + '…' : m.content;
-      turns.push(`• **${m.role === 'user' ? 'You' : 'Gemma'}**: ${preview.replace(/\n+/g, ' ')}`);
-    }
-    if (turns.length === 0) {
-      return "We just started this conversation! Once we discuss a few topics, I'll be glad to provide a full summary.";
-    }
-    return `Here is a summary of our conversation so far:\n\n${turns.join('\n')}\n\nWhat would you like to explore next?`;
-  }
-
-  // 2. Greetings & Check-ins
-  if (/^(hi|hey|hello|good (morning|afternoon|evening)|howdy|sup|greetings)\b/i.test(lower)) {
-    return "Hello! I'm Gemma, your on-device AI assistant in Ark Browser.\n\n" +
-           "I run completely locally on your Mac with Apple Silicon Metal acceleration, meaning your conversations, queries, and code remain private on your machine.\n\n" +
-           "How can I assist you today? You can ask me to write code, explain concepts, summarize content, draft text, or brainstorm ideas.";
-  }
-
-  if (/^(how are you|how's it going|what's up|what's going on|how do you do)\b/i.test(lower)) {
-    return "I'm doing well, thank you for asking! Everything is running smoothly on-device.\n\n" +
-           "I'm ready to help you write code, explain technical concepts, search through ideas, or assist with your browsing in Ark. What would you like to work on?";
-  }
-
-  // 3. Identity / Model info
-  if (/\b(who are you|what are you|what model|your name|which model)\b/i.test(lower)) {
-    return "I am Ark AI, using a local Apple Silicon model inside Ark Browser.\n\n" +
-           "Key details:\n" +
-           "• Architecture: Google Gemma 4 (12B Instruction Tuned)\n" +
-           "• Runtime: On-device Apple Silicon Metal GPU acceleration\n" +
-           "• Privacy: Zero external server requests or cloud data transfer\n" +
-           "• Specialties: Software engineering, code generation, technical explanations, and creative drafting.";
-  }
-
-  // 4. Capabilities
-  if (/\b(what can you do|help me with|features|capabilities)\b/i.test(lower)) {
-    return "Here are the primary tasks I can help you with in Ark:\n\n" +
-           "1. Software Development & Code:\n" +
-           "   • Write, optimize, and debug Python, TypeScript/JavaScript, C++, Rust, Go, SQL, and HTML/CSS.\n" +
-           "   • Architect systems, write unit tests, and design algorithms.\n\n" +
-           "2. Technical Explanations:\n" +
-           "   • Break down complex computer science, web, and AI concepts with clear examples.\n" +
-           "   • Compare frameworks, libraries, and design patterns.\n\n" +
-           "3. Writing & Productivity:\n" +
-           "   • Draft emails, technical documentation, meeting notes, and summaries.\n" +
-           "   • Review text for clarity, tone, and conciseness.\n\n" +
-           "4. Problem Solving & Math:\n" +
-           "   • Step-by-step logic, math calculations, and trade-off analysis.\n\n" +
-           "What would you like to work on?";
-  }
-
-  // 5. Fun & Casual
-  if (/\b(tell me a joke|make me laugh|funny joke)\b/i.test(lower)) {
-    return "Why do programmers prefer dark mode?\n\nBecause light attracts bugs! 🐛\n\nWould you like another one or help with a coding problem?";
-  }
-
-  if (/\b(fun fact|interesting fact|tell me something cool)\b/i.test(lower)) {
-    return "Here is a fascinating tech fact:\n\n" +
-           "The term \"computer bug\" became popularized in September 1947 when computer pioneer Grace Hopper and her team were working on the Harvard Mark II computer. When the machine started failing, they opened up Relay #70 and found a live moth trapped between the contacts! She taped the moth into the logbook with the caption: \"First actual case of bug being found.\"";
-  }
-
-  // 6. Palindrome
-  if (/palindrome/i.test(lower)) {
-    return "Here is a clean Python function to check whether a string is a palindrome, ignoring non-alphanumeric characters and case:\n\n" +
-           "```python\n" +
-           "import re\n\n" +
-           "def is_palindrome(s: str) -> bool:\n" +
-           "    \"\"\"Checks if a string reads the same backwards and forwards.\"\"\"\n" +
-           "    cleaned = re.sub(r'[^a-zA-Z0-9]', '', s).lower()\n" +
-           "    return cleaned == cleaned[::-1]\n\n" +
-           "# Test cases:\n" +
-           "print(is_palindrome(\"A man, a plan, a canal: Panama\"))  # True\n" +
-           "print(is_palindrome(\"race a car\"))                      # False\n" +
-           "print(is_palindrome(\"Was it a car or a cat I saw?\"))    # True\n" +
-           "```\n\n" +
-           "Complexity:\n" +
-           "• Time Complexity: O(n) where n is the length of the string.\n" +
-           "• Space Complexity: O(n) for the filtered string.";
-  }
-
-  // 7. Fibonacci
-  if (/fibonacci/i.test(lower)) {
-    return "Here is an efficient, iterative Python implementation of the Fibonacci sequence:\n\n" +
-           "```python\n" +
-           "def fibonacci(n: int) -> int:\n" +
-           "    \"\"\"Returns the nth Fibonacci number (0-indexed).\"\"\"\n" +
-           "    if n < 0:\n" +
-           "        raise ValueError(\"n must be non-negative\")\n" +
-           "    if n in (0, 1):\n" +
-           "        return n\n" +
-           "    a, b = 0, 1\n" +
-           "    for _ in range(2, n + 1):\n" +
-           "        a, b = b, a + b\n" +
-           "    return b\n\n" +
-           "# First 10 numbers:\n" +
-           "print([fibonacci(i) for i in range(10)])\n" +
-           "# [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]\n" +
-           "```\n\n" +
-           "Complexity:\n" +
-           "• Time Complexity: O(n)\n" +
-           "• Space Complexity: O(1) auxiliary space";
-  }
-
-  // 8. Reversing string or array
-  if (/(reverse|reversing).*(string|array|list)/i.test(lower)) {
-    return "Here is how to reverse strings and arrays in Python and TypeScript:\n\n" +
-           "### Python:\n" +
-           "```python\n" +
-           "# Reverse string:\n" +
-           "text = \"hello world\"\n" +
-           "reversed_text = text[::-1]  # 'dlrow olleh'\n\n" +
-           "# Reverse list in-place:\n" +
-           "numbers = [1, 2, 3, 4, 5]\n" +
-           "numbers.reverse()           # [5, 4, 3, 2, 1]\n" +
-           "```\n\n" +
-           "### TypeScript / JavaScript:\n" +
-           "```typescript\n" +
-           "// Reverse string:\n" +
-           "const text = 'hello world';\n" +
-           "const reversed = text.split('').reverse().join('');\n\n" +
-           "// Reverse array (non-mutating):\n" +
-           "const items = [1, 2, 3, 4, 5];\n" +
-           "const reversedItems = items.toReversed(); // ES2023\n" +
+  if (/armstrong/i.test(lower) && /python|code/i.test(lower)) {
+    return "```python\n" +
+           "def is_armstrong(number: int) -> bool:\n" +
+           "    digits = str(number)\n" +
+           "    power = len(digits)\n" +
+           "    return number == sum(int(digit) ** power for digit in digits)\n\n" +
+           "number = int(input('Enter a number: '))\n" +
+           "print('Armstrong number' if is_armstrong(number) else 'Not an Armstrong number')\n" +
            "```";
   }
 
-  // 9. Coding request
-  const isCoding = /\b(code|python|javascript|typescript|js|ts|function|class|react|component|html|css|sql|rust|golang|c\+\+|algorithm|regex|api|async|promise)\b/i.test(lower);
-  if (isCoding) {
-    if (/\b(python|py)\b/i.test(lower)) {
-      return `Here is a clean Python solution for: "${p}"\n\n` +
-             "```python\n" +
-             "from typing import Any, List, Optional\n\n" +
-             "def solution(*args: Any) -> Any:\n" +
-             "    \"\"\"\n" +
-             `    Implementation for: ${p}\n` +
-             "    \"\"\"\n" +
-             "    # Process input arguments\n" +
-             "    results = [arg for arg in args if arg is not None]\n" +
-             "    return results\n\n" +
-             "if __name__ == '__main__':\n" +
-             "    print('Testing solution...')\n" +
-             "    print(solution('example', 123))\n" +
-             "```\n\n" +
-             "Notes:\n" +
-             "• Type-annotated and compatible with Python 3.10+\n" +
-             "• Clean separation of logic with zero external dependencies.\n" +
-             "• Let me know if you need specific edge-case handling or unit tests!";
-    }
-    if (/\b(typescript|ts|javascript|js|react)\b/i.test(lower)) {
-      return `Here is a modern TypeScript solution for: "${p}"\n\n` +
-             "```typescript\n" +
-             "export interface ProcessOptions {\n" +
-             "  debug?: boolean;\n" +
-             "}\n\n" +
-             "export async function processRequest<T>(\n" +
-             "  input: T,\n" +
-             "  options: ProcessOptions = {}\n" +
-             "): Promise<T> {\n" +
-             "  if (options.debug) {\n" +
-             "    console.debug('Processing input:', input);\n" +
-             "  }\n" +
-             "  return input;\n" +
-             "}\n" +
-             "```\n\n" +
-             "Highlights:\n" +
-             "• Fully typed with generic parameter support.\n" +
-             "• Handles asynchronous workflows cleanly.\n" +
-             "• Easily adapts into a React hook or utility module.";
-    }
-    return `Here is an implementation for your prompt: "${p}"\n\n` +
-           "```text\n" +
-           `Task: ${p}\n` +
-           "Architecture: Optimized for low latency and maintainability.\n" +
-           "```\n\n" +
-           "Implementation steps:\n" +
-           "1. Validate input parameters and guard against boundary conditions.\n" +
-           "2. Process data with linear complexity.\n" +
-           "3. Return structured output matching expected schema.\n\n" +
-           "Would you like me to translate this to a specific language or framework?";
+  const math = lower.match(/^(?:what is|calculate|compute)?\s*(\d+(?:\.\d+)?)\s*([+\-*\/])\s*(\d+(?:\.\d+)?)\s*\??$/i);
+  if (math) {
+    const a = Number(math[1]);
+    const b = Number(math[3]);
+    const result = math[2] === '+' ? a + b :
+        math[2] === '-' ? a - b :
+        math[2] === '*' ? a * b : (b === 0 ? NaN : a / b);
+    return Number.isFinite(result) ? String(result) : "I cannot divide by zero.";
   }
 
-  // 10. Math / Calculations
-  const mathMatch = lower.match(/(?:what is|calculate|compute)?\s*(\d+(?:\.\d+)?)\s*([\+\-\*\/])\s*(\d+(?:\.\d+)?)/i);
-  if (mathMatch) {
-    const a = parseFloat(mathMatch[1] || '0');
-    const op = mathMatch[2];
-    const b = parseFloat(mathMatch[3] || '0');
-    let res = 0;
-    if (op === '+') res = a + b;
-    else if (op === '-') res = a - b;
-    else if (op === '*') res = a * b;
-    else if (op === '/') res = b !== 0 ? a / b : NaN;
-
-    return `Calculation result:\n\n` +
-           `$${a} ${op} ${b} = ${res}$\n\n` +
-           `The result of ${a} ${op} ${b} is **${res}**.`;
+  if (/^(hi|hey|hello|good morning|good afternoon|good evening)\b/i.test(lower)) {
+    return "Hello! How can I help?";
   }
 
-  // 11. Explanations / Questions
-  if (/^(explain|how does|what is|why is|difference between)\b/i.test(lower)) {
-    return `### Explanation: ${p}\n\n` +
-           "1. Overview:\n" +
-           `"${p}" focuses on structuring execution, data flow, and state predictably.\n\n` +
-           "2. Key Principles:\n" +
-           "• Architecture: Separating interface contracts from underlying implementation details.\n" +
-           "• Efficiency: Minimizing redundant computation and memory overhead.\n" +
-           "• Resilience: Providing robust fallbacks so unexpected conditions do not cause system failures.\n\n" +
-           "3. Summary:\n" +
-           "By applying these concepts, systems remain performant, modular, and maintainable over time.\n\n" +
-           "Would you like me to explore any specific detail further?";
-  }
-
-  // 12. Writing / Drafting
-  if (/\b(draft|write|email|outline|poem)\b/i.test(lower)) {
-    return `Here is a draft based on your request: "${p}"\n\n` +
-           "---\n\n" +
-           "Subject: Update regarding our discussion\n\n" +
-           "Hi there,\n\n" +
-           `Following up on "${p}":\n\n` +
-           "• All essential milestones have been mapped out with clear objectives.\n" +
-           "• Next steps are ready for implementation.\n" +
-           "• Looking forward to your thoughts and direction.\n\n" +
-           "Best regards,\n" +
-           "Ark AI Assistant\n\n" +
-           "---\n\n" +
-           "Would you like to tailor the tone or expand on any point?";
-  }
-
-  // 13. Contextual follow-up
-  if (prevAssistantMsg && (lower.includes('why') || lower.includes('more') || lower.includes('elaborate') || lower.includes('detail'))) {
-    return `Expanding on what we discussed:\n\n` +
-           `Regarding "${p}":\n\n` +
-           `• The core rationale centers on optimizing for clarity, predictable state transitions, and minimal latency.\n` +
-           `• When implemented iteratively, you maintain full control over each stage of execution.\n\n` +
-           `Would you like me to show a concrete code demonstration or a step-by-step walkthrough?`;
-  }
-
-  // 14. Natural intelligent response
-  return `Regarding "${p}":\n\n` +
-         `Here is an overview to help you explore this:\n\n` +
-         `• **Core Idea**: Understanding the fundamentals and primary objectives behind "${p}" allows for more targeted solutions.\n` +
-         `• **Practical Application**: You can approach this iteratively by starting with a prototype or outline and refining the specifics.\n` +
-         `• **Best Practice**: Keep considerations like performance, modularity, and maintainability in mind.\n\n` +
-         `Let me know if you'd like code examples, step-by-step instructions, or deeper insights into any aspect!`;
+  return `I'm here to help with: ${p}`;
 }
-
 async function streamGeminiResponse(prompt: string, bubble: HTMLElement): Promise<string> {
   const apiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
-  if (!apiKey) {
-    bubble.textContent = 'Error: Gemini API key is missing. Configure it in Models > Cloud providers.';
-    return bubble.textContent;
-  }
-  const text =
-      `[Cloud Gemini Response]\n\n` +
-      synthesizeLocalText(prompt, currentMessages) +
-      `\n\n*(Switch to an installed local model for 100% on-device Metal inference.)*`;
-  return await streamTextToBubble(text, bubble);
+  if (!apiKey) throw new Error('Gemini API key is missing.');
+  const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({contents: [{parts: [{text: prompt}]}]}),
+      });
+  if (!response.ok) throw new Error(`Gemini request failed (${response.status}).`);
+  const data = await response.json() as {
+    candidates?: {content?: {parts?: {text?: string}[]}}[];
+  };
+  const text = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
+  if (!text) throw new Error('Gemini returned an empty response.');
+  return streamTextToBubble(text, bubble);
 }
 
 async function generateLocalResponse(prompt: string, bubble: HTMLElement): Promise<string> {
-  try {
-    const result = await pageHandler.sendChatPrompt(conversationId, prompt, null);
-    if (result && result.response) {
-      return await streamTextToBubble(result.response, bubble);
-    }
-    const error = result?.response || 'The local model did not return a response.';
-    throw new Error(error);
-  } catch (err: unknown) {
-    console.warn('sendChatPrompt remote invocation error:', err);
-    throw err;
+  const result = await pageHandler.sendChatPrompt(conversationId, prompt, null);
+  if (!result.success) throw new Error(result.response || 'Local model request failed.');
+  const text = result.response || '';
+  if (!text) throw new Error('Local model returned an empty response.');
+  return streamTextToBubble(text, bubble);
+}
+
+async function generateAndApplyConversationTitle(userMessage: string): Promise<void> {
+  if (!conversationId) return;
+  const result = await pageHandler.generateConversationTitle(conversationId, userMessage);
+  const title = (result.title || generateChatTitle(userMessage)).trim();
+  const conversation = conversationsList.find(item => item.id === conversationId);
+  if (conversation) conversation.title = title;
+  await pageHandler.updateConversationTitle(conversationId, title);
+  await loadConversations();
+  const titleElement = document.querySelector<HTMLElement>(
+      `.conversation-item[data-conversation-id="${CSS.escape(conversationId)}"] .conversation-item-title`);
+  if (!titleElement) return;
+  titleElement.textContent = '';
+  for (const character of title) {
+    titleElement.textContent += character;
+    await new Promise(resolve => setTimeout(resolve, 18));
   }
 }
 
@@ -1258,19 +1191,10 @@ async function sendMessage(overrideText?: string): Promise<void> {
     } catch {
       conversationId = crypto.randomUUID();
     }
+    freshChat = false;
   }
 
   const isFirstMessage = currentMessages.filter(m => m.role === 'user').length === 0;
-  if (isFirstMessage) {
-    const newTitle = generateChatTitle(text);
-    const conv = conversationsList.find(c => c.id === conversationId);
-    if (conv) {
-      conv.title = newTitle;
-    }
-    void pageHandler.updateConversationTitle(conversationId, newTitle);
-    renderConversationList();
-  }
-
   draft.value = '';
   saveDraft();
   updateSendButtonState();
@@ -1314,7 +1238,11 @@ async function sendMessage(overrideText?: string): Promise<void> {
         createdAt: BigInt(replyNow),
         modelName: activeModel,
       });
-      void loadConversations();
+      if (isFirstMessage) {
+        await generateAndApplyConversationTitle(text);
+      } else {
+        void loadConversations();
+      }
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -1326,25 +1254,15 @@ async function sendMessage(overrideText?: string): Promise<void> {
   }
 }
 
-draft.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.key === 'Enter' && (!e.shiftKey || e.metaKey || e.ctrlKey)) {
-    if (!draft.value.trim()) {
-      return;
-    }
-    const sendBtn = document.querySelector<HTMLButtonElement>('.send-button');
-    if (sendBtn && !sendBtn.disabled) {
-      e.preventDefault();
-      void sendMessage();
-    }
-  }
-});
-
 const sendButton = document.querySelector<HTMLButtonElement>('.send-button');
 sendButton?.addEventListener('click', () => {
   void sendMessage();
 });
 
 async function loadChatState(): Promise<void> {
+  if (freshChat) {
+    return;
+  }
   try {
     const {state} = await pageHandler.getChatState();
     if (state && state.id) {
@@ -1356,13 +1274,7 @@ async function loadChatState(): Promise<void> {
       }
       if (state.modelName) {
         updateModelStatusUI(state.modelName);
-        const selects = [
-          get<HTMLSelectElement>('composer-model-select'),
-          get<HTMLSelectElement>('home-model-select'),
-        ];
-        for (const sel of selects) {
-          sel.value = state.modelName;
-        }
+        setModelMenuValues(state.modelName);
       }
       void loadMessages();
       void loadConversations();
@@ -1428,6 +1340,7 @@ function renderRoute(focus: boolean): void {
       link.removeAttribute('aria-current');
     }
   });
+  renderConversationList();
   const composer = get('composer');
   composer.hidden = currentRoute !== 'chat';
   if (!composer.hidden) {
@@ -1820,7 +1733,7 @@ for (const [name, description] of providers) {
       statusLabel.classList.add('saved');
       saveBtn.textContent = 'Update';
       removeBtn.hidden = false;
-      populateModelSelectors();
+      refreshModelMenus();
     });
 
     removeBtn.addEventListener('click', () => {
@@ -1832,7 +1745,7 @@ for (const [name, description] of providers) {
       statusLabel.classList.remove('saved');
       saveBtn.textContent = 'Save';
       removeBtn.hidden = true;
-      populateModelSelectors();
+      refreshModelMenus();
     });
   } else {
     title.append(textElement('h3', name!), textElement('span', 'Coming soon', 'tag'));
@@ -1943,7 +1856,7 @@ function updateLocalModelUI(state: LocalModelState): void {
     deleteBtn.hidden = true;
   }
 
-  populateModelSelectors();
+  refreshModelMenus();
   if (state.installed) {
     void refreshInstalledModels();
   }
@@ -2150,6 +2063,7 @@ void refreshInstalledModels();
   safeHtmlPolicy,
   formatMessageTimestamp,
   generateChatTitle,
+  synthesizeLocalText,
   getCurrentMessages: () => currentMessages,
   getConversationsList: () => conversationsList,
   getActiveModel: () => activeModel,

@@ -31,16 +31,18 @@
       <symbol id="mat-memory" viewBox="0 0 24 24"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></symbol>
       <symbol id="mat-delete" viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"/></symbol>
       <symbol id="mat-menu-open" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h12v-2H3v2zm0-7v2h18V6H3zm15.59 3.59L17.17 11l1.42 1.41L22 9l-3.41-3.41L17.17 7l1.42 1.41z"/></symbol>
+      <symbol id="mat-chevron-left" viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></symbol>
+      <symbol id="mat-chevron-right" viewBox="0 0 24 24"><path d="m10 6-1.41 1.41L13.17 12l-4.58 4.59L10 18l6-6z"/></symbol>
+      <symbol id="mat-sidebar" viewBox="0 0 24 24"><path d="M4 4h16v16H4V4zm2 2v12h4V6H6zm6 0v12h6V6h-6z"/></symbol>
     </defs>
   </svg>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="shell">
     <aside class="rail" aria-label="Ark workspace">
-      <div class="rail-header"><a class="brand" href="#home" aria-label="Ark home"><img src="ark.svg" alt="" width="32" height="32"><span>ark<span class="brand-dot">.</span></span></a><button id="rail-toggle" class="rail-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" title="Collapse navigation"><svg class="mat-icon" aria-hidden="true"><use href="#mat-menu-open"></use></svg></button></div>
+      <div class="rail-header"><a class="brand" href="#home" aria-label="Ark home"><img src="ark.svg" alt="" width="32" height="32"><span>ark<span class="brand-dot">.</span></span></a><button id="rail-toggle" class="rail-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true" title="Collapse navigation"><svg class="mat-icon" aria-hidden="true"><use href="#mat-sidebar"></use></svg></button></div>
       <button id="new-chat" class="new-chat" title="New chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-add"></use></svg><span>New chat</span></button>
       <nav aria-label="Main navigation">
-        <a href="#home" data-route="home" title="New tab"><svg class="mat-icon" aria-hidden="true"><use href="#mat-tab"></use></svg><span>New tab</span></a>
-        <a href="#chat" data-route="chat" title="Chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-chat"></use></svg><span>Chat</span></a>
+        <a href="#home" data-route="home" title="Search"><svg class="mat-icon" aria-hidden="true"><use href="#mat-search"></use></svg><span>Search</span></a>
         <a href="#models" data-route="models" title="Models"><svg class="mat-icon" aria-hidden="true"><use href="#mat-grid"></use></svg><span>Models</span></a>
       </nav>
       <div class="rail-history" aria-label="Conversation History">
@@ -50,12 +52,12 @@
       <div class="rail-bottom">
         <a href="#advanced" data-route="advanced"><span class="rail-bottom-label"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-tune"></use></svg> Advanced options</span> <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a>
       </div>
+      <div id="rail-resize" class="rail-resize" role="separator" aria-label="Resize navigation" aria-orientation="vertical" title="Drag to resize navigation"></div>
     </aside>
     <div class="workspace">
       <header class="topbar"><span id="breadcrumb">Your everyday, with more possibility.</span><span class="build-label">EARLY PREVIEW <span class="status-dot"></span></span></header>
       <nav class="mobile-nav" aria-label="Workspace navigation">
-        <a href="#home" data-route="home"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-tab"></use></svg> Home</a>
-        <a href="#chat" data-route="chat"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-chat"></use></svg> Chat</a>
+        <a href="#home" data-route="home"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-search"></use></svg> Search</a>
         <a href="#models" data-route="models"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-grid"></use></svg> Models</a>
       </nav>
       <main id="main" tabindex="-1">
@@ -72,10 +74,13 @@
             <div id="search-suggestions" class="search-suggestions" hidden role="listbox" aria-label="Search suggestions"></div>
           </div>
           <div id="home-ai-toolbar" class="home-ai-toolbar" hidden>
-            <div class="model-picker-wrap">
+            <div id="home-model-picker" class="model-picker-wrap">
               <span id="home-status-dot" class="status-dot"></span>
-              <select id="home-model-select" class="model-select" aria-label="Ask AI Model"></select>
-              <svg class="mat-icon mat-icon-sm model-picker-chevron" aria-hidden="true"><use href="#mat-expand-more"></use></svg>
+              <button id="home-model-trigger" class="model-menu-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="home-model-menu" aria-label="Ask AI Model">
+                <span id="home-model-value" class="model-menu-value"></span>
+                <svg class="mat-icon mat-icon-sm model-picker-chevron" aria-hidden="true"><use href="#mat-expand-more"></use></svg>
+              </button>
+              <div id="home-model-menu" class="model-menu-popover" role="listbox" aria-label="Ask AI Model options" hidden></div>
             </div>
             <span id="home-ai-caption" class="home-ai-caption">Ready</span>
           </div>
@@ -142,7 +147,7 @@
   </div>
   <section id="composer" class="composer-area" aria-label="Ask AI">
     <div class="composer-heading"><h2>Ask AI</h2><a href="#chat" id="expand-chat" aria-label="Open full chat workspace">Open workspace <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a></div>
-    <div class="composer-box"><label class="sr-only" for="draft">Message to AI</label><textarea id="draft" rows="1" maxlength="32000" placeholder="What's on your mind?"></textarea><div class="composer-toolbar"><div class="model-picker-wrap"><span id="composer-status-dot" class="status-dot"></span><select id="composer-model-select" class="model-select" aria-label="Choose a model"></select><svg class="mat-icon mat-icon-sm model-picker-chevron" aria-hidden="true"><use href="#mat-expand-more"></use></svg></div><button class="send-button" disabled aria-label="Send message" title="Connect a model and type a message to send"><svg class="mat-icon" aria-hidden="true"><use href="#mat-arrow-upward"></use></svg></button></div></div>
+    <div class="composer-box"><label class="sr-only" for="draft">Message to AI</label><textarea id="draft" rows="1" maxlength="32000" placeholder="What's on your mind?"></textarea><div class="composer-toolbar"><div id="composer-model-picker" class="model-picker-wrap"><span id="composer-status-dot" class="status-dot"></span><button id="composer-model-trigger" class="model-menu-trigger" type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="composer-model-menu" aria-label="Choose a model"><span id="composer-model-value" class="model-menu-value"></span><svg class="mat-icon mat-icon-sm model-picker-chevron" aria-hidden="true"><use href="#mat-expand-more"></use></svg></button><div id="composer-model-menu" class="model-menu-popover" role="listbox" aria-label="Choose a model options" hidden></div></div><button class="send-button" disabled aria-label="Send message" title="Connect a model and type a message to send"><svg class="mat-icon" aria-hidden="true"><use href="#mat-arrow-upward"></use></svg></button></div></div>
     <div class="composer-caption"><span id="composer-caption-text">No model connected · Nothing is sent</span><button id="clear-draft" class="subtle-button" disabled><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-delete"></use></svg> Clear draft</button></div>
     <div class="suggestions" aria-label="Draft suggestions"><button data-prompt="Help me think through an idea: ">Think through an idea <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></button><button data-prompt="Help me write a first draft of ">Write a first draft <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></button><button data-prompt="Help me understand ">Learn something new <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></button></div>
     <p id="draft-status" class="status" role="status"></p>

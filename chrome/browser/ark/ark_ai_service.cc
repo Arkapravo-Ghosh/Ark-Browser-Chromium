@@ -274,6 +274,49 @@ void ArkAIService::SendChatPrompt(std::string conversation_id,
                      "Chat service failed to initialize.", false));
 }
 
+void ArkAIService::GenerateConversationTitle(std::string conversation_id,
+                                              std::string user_message,
+                                              PromptCallback callback) {
+  auto [success_callback, failure_callback] =
+      base::SplitOnceCallback(std::move(callback));
+  RunWhenReady(
+      base::BindOnce(
+          [](ArkAIService* self, std::string conversation_id,
+             std::string user_message, PromptCallback callback) {
+            self->store_.AsyncCall(&ConversationStore::GetConversation)
+                .WithArgs(conversation_id)
+                .Then(base::BindOnce(
+                    [](ArkAIService* ai, std::string cid, std::string message,
+                       PromptCallback title_callback,
+                       ConversationState conversation) {
+                      const std::string model_name =
+                          conversation.model_name.empty()
+                              ? "local:mlx:llama-3.2-11b-vision-instruct"
+                              : conversation.model_name;
+                      const std::string prompt =
+                          "Create a short chat title based only on the user's "
+                          "message below. Return only 2 to 6 words, with no "
+                          "quotes, punctuation, or explanation.\n\nUser "
+                          "message:\n" +
+                          message;
+                      if (!ai->inference_service_) {
+                        std::move(title_callback).Run(
+                            "Inference service unavailable.", false);
+                        return;
+                      }
+                      ai->inference_service_->SendPrompt(
+                          cid, model_name, prompt, std::nullopt, {},
+                          std::move(title_callback));
+                    },
+                    self, std::move(conversation_id), std::move(user_message),
+                    std::move(callback)));
+          },
+          this, std::move(conversation_id), std::move(user_message),
+          std::move(success_callback)),
+      base::BindOnce(std::move(failure_callback),
+                     "Chat service failed to initialize.", false));
+}
+
 void ArkAIService::OnPromptCompleted(std::string conversation_id,
                                      std::string model_name,
                                      PromptCallback callback,
