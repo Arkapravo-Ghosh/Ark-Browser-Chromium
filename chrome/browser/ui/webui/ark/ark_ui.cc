@@ -9,22 +9,22 @@
 #include "base/feature_list.h"
 #include "base/functional/bind.h"
 #include "base/json/json_reader.h"
+#include "base/strings/escape.h"
 #include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "base/values.h"
 #include "chrome/browser/ark/ark_ai_service.h"
 #include "chrome/browser/ark/ark_ai_service_factory.h"
 #include "chrome/browser/ark/ark_features.h"
-#include "chrome/common/ark_url_constants.h"
 #include "chrome/browser/autocomplete/autocomplete_classifier_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/search_engines/template_url_service_factory.h"
 #include "chrome/browser/ui/browser_window/public/global_browser_collection.h"
 #include "chrome/browser/ui/side_panel/side_panel_entry_key.h"
 #include "chrome/browser/ui/side_panel/side_panel_ui.h"
+#include "chrome/common/ark_url_constants.h"
 #include "chrome/grit/ark_resources.h"
 #include "chrome/grit/ark_resources_map.h"
-#include "base/strings/escape.h"
 #include "components/omnibox/browser/autocomplete_classifier.h"
 #include "components/omnibox/browser/autocomplete_match.h"
 #include "components/omnibox/browser/search_suggestion_parser.h"
@@ -40,13 +40,60 @@
 #include "services/network/public/cpp/resource_request.h"
 #include "services/network/public/cpp/shared_url_loader_factory.h"
 #include "services/network/public/cpp/simple_url_loader.h"
+#include "services/network/public/mojom/content_security_policy.mojom.h"
 #include "ui/base/page_transition_types.h"
 #include "ui/webui/webui_util.h"
 
 namespace {
 
 ark::mojom::ConversationStatePtr ToMojom(ark::ConversationState state) {
-  return ark::mojom::ConversationState::New(state.id, state.title, state.draft);
+  return ark::mojom::ConversationState::New(state.id, state.title, state.draft,
+                                            state.model_name);
+}
+
+std::vector<ark::mojom::ConversationStatePtr> ToMojom(
+    std::vector<ark::ConversationState> states) {
+  std::vector<ark::mojom::ConversationStatePtr> converted;
+  converted.reserve(states.size());
+  for (auto& state : states) {
+    converted.push_back(ToMojom(std::move(state)));
+  }
+  return converted;
+}
+
+ark::mojom::ChatMessagePtr ToMojom(ark::ChatMessage message) {
+  return ark::mojom::ChatMessage::New(message.id, message.conversation_id,
+                                      message.role, message.content,
+                                      message.created_at, message.model_name);
+}
+
+std::vector<ark::mojom::ChatMessagePtr> ToMojom(
+    std::vector<ark::ChatMessage> messages) {
+  std::vector<ark::mojom::ChatMessagePtr> converted;
+  converted.reserve(messages.size());
+  for (auto& message : messages) {
+    converted.push_back(ToMojom(std::move(message)));
+  }
+  return converted;
+}
+
+ark::mojom::LocalModelStatePtr ToMojom(ark::LocalModelState state) {
+  return ark::mojom::LocalModelState::New(
+      state.model_id, state.display_name, state.variant, state.state,
+      state.detail, state.bytes_downloaded, state.bytes_total, state.can_start,
+      state.can_pause, state.can_resume, state.installed,
+      state.runtime_compatible);
+}
+
+std::vector<ark::mojom::ModelSearchResultPtr> ToMojom(
+    std::vector<ark::ModelSearchResult> results) {
+  std::vector<ark::mojom::ModelSearchResultPtr> converted;
+  converted.reserve(results.size());
+  for (auto& result : results) {
+    converted.push_back(ark::mojom::ModelSearchResult::New(
+        std::move(result.id), result.downloads, result.gated, result.prepared));
+  }
+  return converted;
 }
 
 std::vector<std::string> ParseGoogleSuggestions(const std::string& json_str) {
@@ -82,6 +129,11 @@ ArkUI::ArkUI(content::WebUI* web_ui) : ui::MojoWebUIController(web_ui) {
   auto* source = content::WebUIDataSource::CreateAndAdd(
       web_ui->GetWebContents()->GetBrowserContext(), ark::kArkChatHost);
   webui::SetupWebUIDataSource(source, kArkResources, IDR_ARK_ARK_HTML);
+  source->DisableTrustedTypesCSP();
+  source->OverrideContentSecurityPolicy(
+      network::mojom::CSPDirectiveName::ConnectSrc,
+      "connect-src 'self' https://generativelanguage.googleapis.com "
+      "https://huggingface.co http://127.0.0.1:* http://localhost:*;");
 }
 
 ArkUI::~ArkUI() {
@@ -92,8 +144,7 @@ ArkUI::~ArkUI() {
 
 void ArkUI::BindInterface(
     mojo::PendingReceiver<ark::mojom::PageHandler> receiver) {
-  receiver_.reset();
-  receiver_.Bind(std::move(receiver));
+  receivers_.Add(this, std::move(receiver));
 }
 
 void ArkUI::Navigate(const std::string& input, NavigateCallback callback) {
@@ -142,8 +193,8 @@ void ArkUI::GetSearchSuggestions(const std::string& input,
     std::move(pending_suggestions_callback_).Run({});
   }
 
-  std::string trimmed_query =
-      base::UTF16ToUTF8(base::TrimWhitespace(base::UTF8ToUTF16(input), base::TRIM_ALL));
+  std::string trimmed_query = base::UTF16ToUTF8(
+      base::TrimWhitespace(base::UTF8ToUTF16(input), base::TRIM_ALL));
   if (trimmed_query.empty() || trimmed_query.size() > 1024) {
     std::move(callback).Run({});
     return;
@@ -160,13 +211,15 @@ void ArkUI::GetSearchSuggestions(const std::string& input,
   if (default_provider && turl_service) {
     if (default_provider->GetEngineType(turl_service->search_terms_data()) ==
         SearchEngineType::SEARCH_ENGINE_GOOGLE) {
-      suggest_url = GURL("https://suggestqueries.google.com/complete/search?client=chrome&q=" +
-                         base::EscapeQueryParamValue(trimmed_query, true));
+      suggest_url = GURL(
+          "https://suggestqueries.google.com/complete/search?client=chrome&q=" +
+          base::EscapeQueryParamValue(trimmed_query, true));
     } else {
       TemplateURLRef::SearchTermsArgs args(base::UTF8ToUTF16(trimmed_query));
       args.page_classification = metrics::OmniboxEventProto::NTP_REALBOX;
-      std::string url_str = default_provider->suggestions_url_ref().ReplaceSearchTerms(
-          args, turl_service->search_terms_data());
+      std::string url_str =
+          default_provider->suggestions_url_ref().ReplaceSearchTerms(
+              args, turl_service->search_terms_data());
       if (!url_str.empty()) {
         suggest_url = GURL(url_str);
       }
@@ -174,8 +227,9 @@ void ArkUI::GetSearchSuggestions(const std::string& input,
   }
 
   if (!suggest_url.is_valid() || suggest_url.is_empty()) {
-    suggest_url = GURL("https://suggestqueries.google.com/complete/search?client=chrome&q=" +
-                       base::EscapeQueryParamValue(trimmed_query, true));
+    suggest_url = GURL(
+        "https://suggestqueries.google.com/complete/search?client=chrome&q=" +
+        base::EscapeQueryParamValue(trimmed_query, true));
   }
 
   net::NetworkTrafficAnnotationTag traffic_annotation =
@@ -242,14 +296,110 @@ void ArkUI::GetChatState(GetChatStateCallback callback) {
           std::move(callback)));
 }
 
-void ArkUI::CreateConversation(CreateConversationCallback callback) {
+void ArkUI::GetConversations(GetConversationsCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
-      ->CreateConversation(base::BindOnce(
-          [](CreateConversationCallback callback,
-             ark::ConversationState state) {
-            std::move(callback).Run(ToMojom(std::move(state)));
+      ->GetConversations(base::BindOnce(
+          [](GetConversationsCallback callback,
+             std::vector<ark::ConversationState> conversations) {
+            std::move(callback).Run(ToMojom(std::move(conversations)));
           },
           std::move(callback)));
+}
+
+void ArkUI::CreateConversation(const std::string& model_name,
+                                CreateConversationCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->CreateConversation(
+          model_name,
+          base::BindOnce(
+              [](CreateConversationCallback callback,
+                 ark::ConversationState state) {
+                std::move(callback).Run(ToMojom(std::move(state)));
+              },
+              std::move(callback)));
+}
+
+void ArkUI::SwitchConversation(const std::string& conversation_id,
+                               SwitchConversationCallback callback) {
+  if (conversation_id.empty()) {
+    std::move(callback).Run(ark::mojom::ConversationState::New());
+    return;
+  }
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->SwitchConversation(
+          conversation_id,
+          base::BindOnce(
+              [](SwitchConversationCallback callback,
+                 ark::ConversationState state) {
+                std::move(callback).Run(ToMojom(std::move(state)));
+              },
+              std::move(callback)));
+}
+
+void ArkUI::DeleteConversation(const std::string& conversation_id,
+                               DeleteConversationCallback callback) {
+  if (conversation_id.empty()) {
+    std::move(callback).Run(false);
+    return;
+  }
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->DeleteConversation(conversation_id, std::move(callback));
+}
+
+void ArkUI::GetMessages(const std::string& conversation_id,
+                        GetMessagesCallback callback) {
+  if (conversation_id.empty()) {
+    std::move(callback).Run({});
+    return;
+  }
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->GetMessages(conversation_id,
+                    base::BindOnce(
+                        [](GetMessagesCallback callback,
+                           std::vector<ark::ChatMessage> messages) {
+                          std::move(callback).Run(ToMojom(std::move(messages)));
+                        },
+                        std::move(callback)));
+}
+
+void ArkUI::AddMessage(const std::string& conversation_id,
+                       const std::string& role,
+                       const std::string& content,
+                       const std::string& model_name,
+                       AddMessageCallback callback) {
+  if (conversation_id.empty() || role.empty() || content.empty() ||
+      content.size() > 65536) {
+    std::move(callback).Run(false);
+    return;
+  }
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->AddMessage(conversation_id, role, content, model_name,
+                   std::move(callback));
+}
+
+void ArkUI::UpdateConversationTitle(
+    const std::string& conversation_id,
+    const std::string& title,
+    UpdateConversationTitleCallback callback) {
+  if (conversation_id.empty() || title.size() > 500) {
+    std::move(callback).Run(false);
+    return;
+  }
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->UpdateConversationTitle(conversation_id, title, std::move(callback));
+}
+
+void ArkUI::UpdateConversationModel(
+    const std::string& conversation_id,
+    const std::string& model_name,
+    UpdateConversationModelCallback callback) {
+  if (conversation_id.empty()) {
+    std::move(callback).Run(false);
+    return;
+  }
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->UpdateConversationModel(conversation_id, model_name,
+                                std::move(callback));
 }
 
 void ArkUI::SaveDraft(const std::string& conversation_id,
@@ -261,6 +411,81 @@ void ArkUI::SaveDraft(const std::string& conversation_id,
   }
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
       ->SaveDraft(conversation_id, draft, std::move(callback));
+}
+
+void ArkUI::SearchLocalModels(const std::string& query,
+                              SearchLocalModelsCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->SearchLocalModels(query,
+                          base::BindOnce(
+                              [](SearchLocalModelsCallback callback,
+                                 std::vector<ark::ModelSearchResult> results,
+                                 std::string error) {
+                                std::move(callback).Run(
+                                    ToMojom(std::move(results)), error);
+                              },
+                              std::move(callback)));
+}
+
+void ArkUI::GetLocalModelState(GetLocalModelStateCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->GetLocalModelState(base::BindOnce(
+          [](GetLocalModelStateCallback callback, ark::LocalModelState state) {
+            std::move(callback).Run(ToMojom(std::move(state)));
+          },
+          std::move(callback)));
+}
+
+void ArkUI::StartLocalModelDownload(bool license_accepted,
+                                    StartLocalModelDownloadCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->StartLocalModelDownload(
+          license_accepted,
+          base::BindOnce(
+              [](StartLocalModelDownloadCallback callback,
+                 ark::LocalModelState state) {
+                std::move(callback).Run(ToMojom(std::move(state)));
+              },
+              std::move(callback)));
+}
+
+void ArkUI::PauseLocalModelDownload(PauseLocalModelDownloadCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->PauseLocalModelDownload(base::BindOnce(
+          [](PauseLocalModelDownloadCallback callback,
+             ark::LocalModelState state) {
+            std::move(callback).Run(ToMojom(std::move(state)));
+          },
+          std::move(callback)));
+}
+
+void ArkUI::ResumeLocalModelDownload(
+    ResumeLocalModelDownloadCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->ResumeLocalModelDownload(base::BindOnce(
+          [](ResumeLocalModelDownloadCallback callback,
+             ark::LocalModelState state) {
+            std::move(callback).Run(ToMojom(std::move(state)));
+          },
+          std::move(callback)));
+}
+
+void ArkUI::DeleteLocalModel(DeleteLocalModelCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->DeleteLocalModel(base::BindOnce(
+          [](DeleteLocalModelCallback callback, ark::LocalModelState state) {
+            std::move(callback).Run(ToMojom(std::move(state)));
+          },
+          std::move(callback)));
+}
+
+void ArkUI::SendChatPrompt(const std::string& conversation_id,
+                           const std::string& message,
+                           const std::optional<std::string>& image_data,
+                           SendChatPromptCallback callback) {
+  ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
+      ->SendChatPrompt(conversation_id, message, image_data,
+                       std::move(callback));
 }
 
 void ArkUI::OpenSidebarWithDraft(const std::string& draft,

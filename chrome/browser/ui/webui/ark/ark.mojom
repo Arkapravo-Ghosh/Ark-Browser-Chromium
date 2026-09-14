@@ -8,6 +8,38 @@ struct ConversationState {
   string id;
   string title;
   string draft;
+  string model_name;
+};
+
+struct ChatMessage {
+  int64 id;
+  string conversation_id;
+  string role;
+  string content;
+  int64 created_at;
+  string model_name;
+};
+
+struct ModelSearchResult {
+  string id;
+  int64 downloads;
+  bool gated;
+  bool prepared;
+};
+
+struct LocalModelState {
+  string model_id;
+  string display_name;
+  string variant;
+  string state;
+  string detail;
+  double bytes_downloaded;
+  double bytes_total;
+  bool can_start;
+  bool can_pause;
+  bool can_resume;
+  bool installed;
+  bool runtime_compatible;
 };
 
 // Browser-owned capabilities shared by the Ark new tab and AI side panel.
@@ -15,7 +47,24 @@ interface PageHandler {
   Navigate(string text) => (bool success);
   GetSearchSuggestions(string query) => (array<string> suggestions);
   GetChatState() => (ConversationState state);
-  CreateConversation() => (ConversationState state);
+  GetConversations() => (array<ConversationState> conversations);
+  CreateConversation(string model_name) => (ConversationState state);
+  SwitchConversation(string conversation_id) => (ConversationState state);
+  DeleteConversation(string conversation_id) => (bool success);
+  UpdateConversationTitle(string conversation_id, string title) => (bool success);
+  UpdateConversationModel(string conversation_id, string model_name) => (bool success);
+  GetMessages(string conversation_id) => (array<ChatMessage> messages);
+  AddMessage(string conversation_id, string role, string content, string model_name) =>
+      (bool success);
   SaveDraft(string conversation_id, string draft) => (bool success);
   OpenSidebarWithDraft(string draft) => (bool success);
+  SearchLocalModels(string query) =>
+      (array<ModelSearchResult> results, string error);
+  GetLocalModelState() => (LocalModelState state);
+  StartLocalModelDownload(bool license_accepted) => (LocalModelState state);
+  PauseLocalModelDownload() => (LocalModelState state);
+  ResumeLocalModelDownload() => (LocalModelState state);
+  DeleteLocalModel() => (LocalModelState state);
+  SendChatPrompt(string conversation_id, string message, string? image_data)
+      => (string response, bool success);
 };

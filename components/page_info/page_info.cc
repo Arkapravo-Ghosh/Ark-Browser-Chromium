@@ -447,6 +447,7 @@ void PageInfo::OnThirdPartyToggleClicked(bool block_third_party_cookies) {
 // static
 bool PageInfo::IsFileOrInternalPage(const GURL& url) {
   return url.SchemeIs(content::kChromeUIScheme) ||
+         url.SchemeIs("ark") ||
          url.SchemeIs(content::kChromeDevToolsScheme) ||
          url.SchemeIs(content::kViewSourceScheme) ||
          url.SchemeIs(url::kFileScheme);
@@ -1025,6 +1026,7 @@ void PageInfo::ComputeUIInputs(const GURL& url) {
   // On desktop, internal URLs aren't handled by this class. Instead, a
   // custom and simpler bubble is shown.
   DCHECK(!url.SchemeIs(content::kChromeUIScheme) &&
+         !url.SchemeIs("ark") &&
          !url.SchemeIs(content::kChromeDevToolsScheme) &&
          !url.SchemeIs(content::kViewSourceScheme) &&
          !url.SchemeIs(content_settings::kExtensionScheme));
@@ -1050,7 +1052,8 @@ void PageInfo::ComputeUIInputs(const GURL& url) {
     return;
   }
 
-  if (url.SchemeIs(content::kChromeUIScheme) || is_chrome_ui_native_scheme) {
+  if (url.SchemeIs(content::kChromeUIScheme) || url.SchemeIs("ark") ||
+      is_chrome_ui_native_scheme) {
     site_identity_status_ = SITE_IDENTITY_STATUS_INTERNAL_PAGE;
 #if BUILDFLAG(IS_ANDROID)
     identity_status_description_android_ =

@@ -42,10 +42,12 @@
         <a href="#chat" data-route="chat"><svg class="mat-icon" aria-hidden="true"><use href="#mat-chat"></use></svg> Chat</a>
         <a href="#models" data-route="models"><svg class="mat-icon" aria-hidden="true"><use href="#mat-grid"></use></svg> Models</a>
       </nav>
-      <div class="rail-note"><span class="eyebrow">YOUR SPACE</span><p>A little room<br>for your next idea.</p></div>
+      <div class="rail-history" aria-label="Conversation History">
+        <div class="history-eyebrow-row"><span class="eyebrow">CHATS</span></div>
+        <div id="conversation-list" class="conversation-list" role="list" aria-label="Saved conversations"></div>
+      </div>
       <div class="rail-bottom">
         <a href="#advanced" data-route="advanced"><span class="rail-bottom-label"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-tune"></use></svg> Advanced options</span> <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a>
-        <a href="#about" data-route="about"><span class="rail-bottom-label"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-info"></use></svg> About Ark</span> <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a>
       </div>
     </aside>
     <div class="workspace">
@@ -54,7 +56,6 @@
         <a href="#home" data-route="home"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-tab"></use></svg> Home</a>
         <a href="#chat" data-route="chat"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-chat"></use></svg> Chat</a>
         <a href="#models" data-route="models"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-grid"></use></svg> Models</a>
-        <a href="#about" data-route="about"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-info"></use></svg> About</a>
       </nav>
       <main id="main" tabindex="-1">
         <section id="home-page" class="page home-page" aria-labelledby="home-title">
@@ -69,20 +70,62 @@
             </form>
             <div id="search-suggestions" class="search-suggestions" hidden role="listbox" aria-label="Search suggestions"></div>
           </div>
+          <div id="home-ai-toolbar" class="home-ai-toolbar" hidden>
+            <div class="model-picker-wrap">
+              <span id="home-status-dot" class="status-dot"></span>
+              <select id="home-model-select" class="model-select" aria-label="Ask AI Model"></select>
+              <svg class="mat-icon mat-icon-sm model-picker-chevron" aria-hidden="true"><use href="#mat-expand-more"></use></svg>
+            </div>
+            <span id="home-ai-caption" class="home-ai-caption">Ready</span>
+          </div>
           <p id="search-status" class="status" role="status"></p>
         </section>
 
         <section id="chat-page" class="page chat-page" aria-labelledby="chat-title" hidden>
           <div class="page-heading"><div><span class="eyebrow">ARK AI</span><h1 id="chat-title">Space to think.</h1></div><a class="text-link" href="#models">Model settings <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a></div>
-          <div class="chat-empty"><img src="ark.svg" width="56" height="56" alt=""><h2>Start with a thought.</h2><p>Choose a model to turn a question into a conversation.<br>Your draft stays here while you explore.</p></div>
+          <div id="chat-empty" class="chat-empty"><img src="ark.svg" width="56" height="56" alt=""><h2>Start with a thought.</h2><p>Choose a model to turn a question into a conversation.<br>Your draft stays here while you explore.</p></div>
+          <div id="chat-messages" class="chat-messages" hidden></div>
           <div id="chat-composer-slot"></div>
         </section>
         <section id="models-page" class="page settings-page" aria-labelledby="models-title" hidden>
           <div class="page-heading"><div><span class="eyebrow">ON YOUR TERMS</span><h1 id="models-title">Your models.</h1><p>One workspace. Your choice of where AI runs.</p></div></div>
-          <div class="notice"><span class="status-dot"></span><div><strong>No model connected</strong><p>Model connections and local inference are not available in this preview. You can browse normally and prepare a chat draft.</p></div></div>
-          <div class="segmented" role="group" aria-label="Model location"><button id="cloud-tab" aria-pressed="true">Cloud providers</button><button id="local-tab" aria-pressed="false">Local models</button></div>
-          <div id="cloud-models"><div class="section-heading"><h2>Bring your own connection</h2><span>PLANNED INTEGRATIONS</span></div><div id="provider-grid" class="provider-grid"></div><div class="privacy-note"><strong>You decide what leaves your browser.</strong><p>Cloud chat will send only the conversation and context you explicitly choose to your selected provider. Ark will never silently switch a local conversation to the cloud.</p></div></div>
-          <div id="local-models" hidden><div class="local-card"><svg class="mat-icon mat-icon-lg local-symbol" aria-hidden="true"><use href="#mat-memory"></use></svg><span class="eyebrow">ON THIS DEVICE</span><h2>A model of your own.</h2><p>Hugging Face discovery, verified GGUF downloads, and local text inference are planned. No models are installed by this preview.</p><button disabled>Model downloads coming soon</button><small>Once supported and installed, local inference will work offline.</small></div></div>
+          <div class="notice"><span class="status-dot"></span><div><strong>Local model manager</strong><p>Search and verified downloads run inside Ark. Prepared models are checked against the bundled runtime before local inference starts.</p></div></div>
+          <div class="segmented" role="group" aria-label="Model location"><button id="local-tab" aria-pressed="true">Local models</button><button id="cloud-tab" aria-pressed="false">Cloud providers</button></div>
+          <div id="cloud-models" hidden><div class="section-heading"><h2>Bring your own connection</h2><span>PLANNED INTEGRATIONS</span></div><div id="provider-grid" class="provider-grid"></div><div class="privacy-note"><strong>You decide what leaves your browser.</strong><p>Cloud chat will send only the conversation and context you explicitly choose to your selected provider. Ark will never silently switch a local conversation to the cloud.</p></div></div>
+          <div id="local-models">
+            <form id="model-search-form" class="model-search" role="search">
+              <svg class="mat-icon" aria-hidden="true"><use href="#mat-search"></use></svg>
+              <label class="sr-only" for="model-search-input">Search Hugging Face models</label>
+              <input id="model-search-input" type="search" maxlength="200" placeholder="Search Hugging Face models…" autocomplete="off">
+              <button type="submit">Search</button>
+            </form>
+            <p id="model-search-status" class="status" role="status"></p>
+            <div id="model-search-results" class="model-results" aria-live="polite"></div>
+            <div class="section-heading prepared-heading"><h2>Prepared for Ark</h2><span>APPLE SILICON · Q4_K_M · QWEN2.5-VL</span></div>
+            <article class="model-card" aria-labelledby="prepared-model-title">
+              <div class="model-card-main">
+                <div class="model-icon"><svg class="mat-icon mat-icon-lg" aria-hidden="true"><use href="#mat-memory"></use></svg></div>
+                <div class="model-copy">
+                  <div class="model-title-line"><h3 id="prepared-model-title">Qwen2.5-VL 7B Instruct</h3><span id="model-state-tag" class="tag">Checking…</span></div>
+                  <p>Q4_K_M weights + Q8 vision projector · approximately 5.2 GiB</p>
+                  <p class="model-desc">Multimodal vision, strong instruction following, and an Apache 2.0 license. Verified with Ark's bundled llama.cpp runtime and Apple Silicon Metal acceleration.</p>
+                </div>
+              </div>
+              <div id="model-progress-wrap" class="model-progress-wrap" hidden>
+                <progress id="model-progress" value="0" max="100"></progress>
+                <div><span id="model-progress-label">0 B of 5.2 GiB</span><span id="model-progress-percent">0%</span></div>
+              </div>
+              <p id="model-download-detail" class="model-detail" role="status"></p>
+              <label id="model-license-row" class="license-row"><input id="model-license" type="checkbox"> <span>I acknowledge the <a href="https://huggingface.co/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF" target="_blank" rel="noreferrer">model source and Apache 2.0 license</a>.</span></label>
+              <div class="model-actions">
+                <button id="model-download" class="primary" type="button">Download in Ark</button>
+                <button id="model-pause" type="button" hidden>Pause</button>
+                <button id="model-resume" type="button" hidden>Resume</button>
+                <button id="model-delete" class="button-danger" type="button" hidden><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-delete"></use></svg> Delete model</button>
+                <a href="https://huggingface.co/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF" target="_blank" rel="noreferrer">View source</a>
+              </div>
+            </article>
+          </div>
           <a class="settings-next" href="#advanced"><div><strong>Make it your own</strong><p>Explore generation and performance options.</p></div><svg class="mat-icon" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a>
         </section>
         <section id="advanced-page" class="page settings-page" aria-labelledby="advanced-title" hidden>
@@ -90,17 +133,14 @@
           <div class="notice"><span class="status-dot"></span><div><strong>Model required</strong><p>These are parameter descriptions. Editing, supported ranges, and presets will become available with model connections. Nothing here changes generation.</p></div></div>
           <div id="parameter-groups"></div><a class="text-link" href="#models"><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-back"></use></svg> Back to models</a>
         </section>
-        <section id="about-page" class="page about-page" aria-labelledby="about-title" hidden>
-          <img src="ark.svg" width="80" height="80" alt=""><span class="eyebrow">ROOM FOR POSSIBILITY</span><h1 id="about-title">Ark Browser<span class="accent">.</span></h1><p>An everyday browser, with a space for AI.<br>Built around your choice of models.</p><div class="about-attribution"><strong>© 2026 Arkapravo Ghosh</strong><p>Based on Chromium. Chromium and third-party components retain their respective copyrights and licenses.</p><p>This is an early UI preview. AI services, Ark application packaging, and Ark updates are still in development.</p><div class="about-links"><a href="ark://version/">Build details <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a><a href="ark://credits/">Open-source licenses <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a><a href="ark://settings/">Browser settings <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a></div></div>
-        </section>
       </main>
       <footer><span>ARK BROWSER</span><span>Based on Chromium</span></footer>
     </div>
   </div>
   <section id="composer" class="composer-area" aria-label="Ask AI">
     <div class="composer-heading"><h2>Ask AI</h2><a href="#chat" id="expand-chat" aria-label="Open full chat workspace">Open workspace <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></a></div>
-    <div class="composer-box"><label class="sr-only" for="draft">Message to AI</label><textarea id="draft" rows="3" maxlength="32000" placeholder="What’s on your mind?"></textarea><div class="composer-toolbar"><a class="model-picker" href="#models"><span class="status-dot"></span> Choose a model <svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-expand-more"></use></svg></a><button class="send-button" disabled aria-label="Send message, unavailable until a model is connected" title="Connect a model before sending"><svg class="mat-icon" aria-hidden="true"><use href="#mat-arrow-upward"></use></svg></button></div></div>
-    <div class="composer-caption"><span>No model connected · Nothing is sent</span><button id="clear-draft" class="subtle-button" disabled><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-delete"></use></svg> Clear draft</button></div>
+    <div class="composer-box"><label class="sr-only" for="draft">Message to AI</label><textarea id="draft" rows="1" maxlength="32000" placeholder="What's on your mind?"></textarea><div class="composer-toolbar"><div class="model-picker-wrap"><span id="composer-status-dot" class="status-dot"></span><select id="composer-model-select" class="model-select" aria-label="Choose a model"></select><svg class="mat-icon mat-icon-sm model-picker-chevron" aria-hidden="true"><use href="#mat-expand-more"></use></svg></div><button class="send-button" disabled aria-label="Send message" title="Connect a model and type a message to send"><svg class="mat-icon" aria-hidden="true"><use href="#mat-arrow-upward"></use></svg></button></div></div>
+    <div class="composer-caption"><span id="composer-caption-text">No model connected · Nothing is sent</span><button id="clear-draft" class="subtle-button" disabled><svg class="mat-icon mat-icon-sm" aria-hidden="true"><use href="#mat-delete"></use></svg> Clear draft</button></div>
     <div class="suggestions" aria-label="Draft suggestions"><button data-prompt="Help me think through an idea: ">Think through an idea <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></button><button data-prompt="Help me write a first draft of ">Write a first draft <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></button><button data-prompt="Help me understand ">Learn something new <svg class="mat-icon mat-icon-sm ext-arrow" aria-hidden="true"><use href="#mat-arrow-outward"></use></svg></button></div>
     <p id="draft-status" class="status" role="status"></p>
   </section>

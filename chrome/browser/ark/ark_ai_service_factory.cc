@@ -31,8 +31,7 @@ std::unique_ptr<KeyedService>
 ArkAIServiceFactory::BuildServiceInstanceForBrowserContext(
     content::BrowserContext* context) const {
   Profile* profile = Profile::FromBrowserContext(context);
-  return std::make_unique<ArkAIService>(profile->GetPath(),
-                                        profile->IsOffTheRecord());
+  return std::make_unique<ArkAIService>(profile, profile->IsOffTheRecord());
 }
 
 }  // namespace ark

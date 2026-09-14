@@ -139,7 +139,7 @@ InternalPageInfoBubbleView::InternalPageInfoBubbleView(
       text = IDS_PAGE_INFO_READER_MODE_PAGE;
     }
   } else {
-    CHECK(url.SchemeIs(content::kChromeUIScheme));
+    CHECK(url.SchemeIs(content::kChromeUIScheme) || url.SchemeIs("ark"));
   }
 
   // Title insets assume there is content (and thus have no bottom padding). Use

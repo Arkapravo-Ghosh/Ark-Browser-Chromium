@@ -5,6 +5,7 @@
 #ifndef CHROME_BROWSER_ARK_ARK_AI_SERVICE_H_
 #define CHROME_BROWSER_ARK_ARK_AI_SERVICE_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -13,27 +14,70 @@
 #include "base/memory/weak_ptr.h"
 #include "base/threading/sequence_bound.h"
 #include "chrome/browser/ark/ark_conversation_store.h"
+#include "chrome/browser/ark/ark_model_manager.h"
 #include "components/keyed_service/core/keyed_service.h"
 
+class Profile;
+
 namespace ark {
+class ArkInferenceService;
 
 class ArkAIService : public KeyedService {
  public:
   using StateCallback = base::OnceCallback<void(ConversationState)>;
+  using ConversationsCallback =
+      base::OnceCallback<void(std::vector<ConversationState>)>;
+  using MessagesCallback = base::OnceCallback<void(std::vector<ChatMessage>)>;
   using ResultCallback = base::OnceCallback<void(bool)>;
+  using PromptCallback =
+      base::OnceCallback<void(const std::string& response, bool success)>;
 
-  ArkAIService(const base::FilePath& profile_path, bool in_memory);
+  ArkAIService(Profile* profile, bool in_memory);
   ~ArkAIService() override;
 
   void GetChatState(StateCallback callback);
-  void CreateConversation(StateCallback callback);
+  void GetConversations(ConversationsCallback callback);
+  void CreateConversation(std::string model_name, StateCallback callback);
+  void SwitchConversation(std::string id, StateCallback callback);
+  void DeleteConversation(std::string id, ResultCallback callback);
+  void GetMessages(std::string conversation_id, MessagesCallback callback);
+  void AddMessage(std::string conversation_id,
+                  std::string role,
+                  std::string content,
+                  std::string model_name,
+                  ResultCallback callback);
+  void UpdateConversationTitle(std::string id,
+                               std::string title,
+                               ResultCallback callback);
+  void UpdateConversationModel(std::string id,
+                               std::string model_name,
+                               ResultCallback callback);
   void SaveDraft(std::string id, std::string draft, ResultCallback callback);
+  void SendChatPrompt(std::string conversation_id,
+                      std::string message,
+                      std::optional<std::string> image_data,
+                      PromptCallback callback);
+  void SearchLocalModels(std::string query,
+                         ArkModelManager::SearchCallback callback);
+  void GetLocalModelState(ArkModelManager::StateCallback callback);
+  void StartLocalModelDownload(bool license_accepted,
+                               ArkModelManager::StateCallback callback);
+  void PauseLocalModelDownload(ArkModelManager::StateCallback callback);
+  void ResumeLocalModelDownload(ArkModelManager::StateCallback callback);
+  void DeleteLocalModel(ArkModelManager::StateCallback callback);
 
  private:
   void OnInitialized(bool success);
+  void OnPromptCompleted(std::string conversation_id,
+                         std::string model_name,
+                         PromptCallback callback,
+                         const std::string& response,
+                         bool success);
   void RunWhenReady(base::OnceClosure operation, base::OnceClosure failure);
 
   base::SequenceBound<ConversationStore> store_;
+  std::unique_ptr<ArkModelManager> model_manager_;
+  std::unique_ptr<ArkInferenceService> inference_service_;
   bool initializing_ = true;
   bool ready_ = false;
   std::vector<base::OnceClosure> pending_operations_;

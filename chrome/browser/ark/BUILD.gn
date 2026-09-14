@@ -18,12 +18,21 @@ source_set("ai_service") {
     "ark_ai_service_factory.h",
     "ark_conversation_store.cc",
     "ark_conversation_store.h",
+    "ark_inference_service.cc",
+    "ark_inference_service.h",
+    "ark_model_manager.cc",
+    "ark_model_manager.h",
+    "ark_paths.cc",
+    "ark_paths.h",
   ]
   deps = [
     "//base",
+    "//components/download/public/common:public",
     "//chrome/browser/profiles:profile",
     "//components/keyed_service/core",
     "//content/public/browser",
+    "//net",
+    "//services/network/public/cpp",
     "//sql",
   ]
 }

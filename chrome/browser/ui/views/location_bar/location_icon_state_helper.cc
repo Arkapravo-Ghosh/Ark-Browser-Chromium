@@ -88,6 +88,7 @@ bool ShouldShowSecurityChipText(const LocationBarModel* model,
 
   const GURL& url = model->GetURL();
   if (url.SchemeIs(content::kChromeUIScheme) ||
+      url.SchemeIs("ark") ||
       url.SchemeIs(extensions::kExtensionScheme) ||
       url.SchemeIs(url::kFileScheme) ||
       url.SchemeIs(dom_distiller::kDomDistillerScheme) ||
