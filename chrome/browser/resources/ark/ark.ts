@@ -26,6 +26,7 @@ let currentRoute: Route = 'home';
 let newChatPending = false;
 let freshChat = false;
 let conversationId = '';
+let conversationStateEpoch = 0;
 let conversationsList: ConversationState[] = [];
 let currentMessages: ChatMessage[] = [];
 let draftSaveTimer = 0;
@@ -845,10 +846,11 @@ async function loadMessages(): Promise<void> {
   if (!conversationId || isGenerating) {
     return;
   }
+  const requestedConversationId = conversationId;
   try {
     const {messages}: {messages: ChatMessage[]} =
-        await pageHandler.getMessages(conversationId);
-    if (isGenerating) {
+        await pageHandler.getMessages(requestedConversationId);
+    if (isGenerating || conversationId !== requestedConversationId || freshChat) {
       return;
     }
     currentMessages = messages ? [...messages] : [];
@@ -964,8 +966,12 @@ async function switchToConversation(id: string): Promise<void> {
   if (isGenerating) {
     return;
   }
+  const switchEpoch = ++conversationStateEpoch;
   try {
     const {state} = await pageHandler.switchConversation(id);
+    if (switchEpoch !== conversationStateEpoch || freshChat) {
+      return;
+    }
     if (state && state.id) {
       freshChat = false;
       conversationId = state.id;
@@ -1015,6 +1021,7 @@ function createNewChat(): void {
   // Keep an empty new chat transient. The backend conversation is created by
   // sendMessage() only when the first prompt is submitted.
   freshChat = true;
+  conversationStateEpoch++;
   conversationId = '';
   draft.value = '';
   saveDraft();
@@ -1263,8 +1270,12 @@ async function loadChatState(): Promise<void> {
   if (freshChat) {
     return;
   }
+  const stateEpoch = conversationStateEpoch;
   try {
     const {state} = await pageHandler.getChatState();
+    if (freshChat || stateEpoch !== conversationStateEpoch) {
+      return;
+    }
     if (state && state.id) {
       conversationId = state.id;
       document.documentElement.dataset['storageReady'] = 'true';
@@ -1616,15 +1627,11 @@ searchForm.addEventListener('submit', async event => {
   get('search-status').textContent = '';
   try {
     if (aiSearchMode) {
-      if (isSidePanel) {
-        draft.value = query;
-        saveDraft();
-        void sendMessage(query);
-      } else {
-        location.hash = 'chat';
-        renderRoute(false);
-        void sendMessage(query);
-      }
+      // Ask AI always starts a transient chat. This prevents a stale
+      // previously selected conversation from receiving the first prompt and
+      // lets sendMessage create the row on demand.
+      createNewChat();
+      void sendMessage(query);
       return;
     }
     const {success} = await pageHandler.navigate(query);
