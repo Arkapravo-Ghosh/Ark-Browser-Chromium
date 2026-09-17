@@ -16,6 +16,8 @@ source_set("ai_service") {
     "ark_ai_service.h",
     "ark_ai_service_factory.cc",
     "ark_ai_service_factory.h",
+    "ark_cloud_inference_service.cc",
+    "ark_cloud_inference_service.h",
     "ark_conversation_store.cc",
     "ark_conversation_store.h",
     "ark_inference_service.cc",

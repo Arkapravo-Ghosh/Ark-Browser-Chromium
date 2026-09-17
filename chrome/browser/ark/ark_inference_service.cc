@@ -39,6 +39,7 @@ constexpr char kDownloadedUnverifiedCompatibility[] = "downloaded_unverified";
 constexpr char kMlxCompatibility[] = "supported_by_bundled_mlx_vlm_0_5_0";
 constexpr char kMlxUnverifiedCompatibility[] = "downloaded_unverified_mlx";
 constexpr size_t kMaximumQueuedPrompts = 8;
+constexpr size_t kMaximumConcurrentPrompts = 2;
 
 // These helpers perform filesystem I/O and must only run on a MayBlock worker.
 base::FilePath GetRuntimeCliPath() {
@@ -365,19 +366,24 @@ ArkInferenceService::ProcessRunResult ArkInferenceService::RunPromptInProcess(
   return result;
 }
 
-void ArkInferenceService::SendPrompt(
+bool ArkInferenceService::SendPrompt(
     const std::string& conversation_id,
     const std::string& model_id,
     const std::string& prompt,
     const std::optional<std::string>& image_data,
     const std::vector<ChatMessage>& history,
     PromptCallback callback) {
+  if (busy_conversation_ids_.contains(conversation_id)) {
+    std::move(callback).Run(
+        "This conversation is already generating a response.", false);
+    return false;
+  }
   if (pending_prompts_.size() >= kMaximumQueuedPrompts) {
     std::move(callback).Run(
         "Local inference is busy. Wait for a queued response or cancel it "
         "before sending another message.",
         false);
-    return;
+    return false;
   }
 
   PendingPrompt pending;
@@ -387,40 +393,44 @@ void ArkInferenceService::SendPrompt(
   pending.image_data = image_data;
   pending.history = history;
   pending.callback = std::move(callback);
+  busy_conversation_ids_.insert(conversation_id);
   pending_prompts_.push_back(std::move(pending));
+  DispatchPrompts();
+  return true;
+}
 
-  if (!request_in_flight_) {
-    DispatchNextPrompt();
+void ArkInferenceService::DispatchPrompts() {
+  while (active_prompts_.size() < kMaximumConcurrentPrompts &&
+         !pending_prompts_.empty()) {
+    PendingPrompt pending = std::move(pending_prompts_.front());
+    pending_prompts_.pop_front();
+    const uint64_t request_id = next_request_id_++;
+    active_prompts_.emplace(
+        request_id, ActivePrompt{.conversation_id = pending.conversation_id,
+                                 .callback = std::move(pending.callback)});
+    runtime_state_ = RuntimeState::kStarting;
+    base::ThreadPool::PostTaskAndReplyWithResult(
+        FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
+        base::BindOnce(&ArkInferenceService::RunPromptInProcess,
+                       pending.model_id, pending.prompt,
+                       std::move(pending.image_data),
+                       std::move(pending.history)),
+        base::BindOnce(&ArkInferenceService::OnProcessResponse,
+                       weak_ptr_factory_.GetWeakPtr(), request_id));
   }
 }
 
-void ArkInferenceService::StartServer() {
-  DispatchNextPrompt();
-}
-
-void ArkInferenceService::DispatchNextPrompt() {
-  if (request_in_flight_ || pending_prompts_.empty()) {
+void ArkInferenceService::OnProcessResponse(uint64_t request_id,
+                                            ProcessRunResult result) {
+  auto active = active_prompts_.find(request_id);
+  if (active == active_prompts_.end()) {
     return;
   }
-  PendingPrompt pending = std::move(pending_prompts_.front());
-  pending_prompts_.pop_front();
-  active_model_id_ = pending.model_id;
-  active_callback_ = std::move(pending.callback);
-  request_in_flight_ = true;
-  runtime_state_ = RuntimeState::kStarting;
-  base::ThreadPool::PostTaskAndReplyWithResult(
-      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_VISIBLE},
-      base::BindOnce(&ArkInferenceService::RunPromptInProcess, pending.model_id,
-                     pending.prompt, std::move(pending.image_data),
-                     std::move(pending.history)),
-      base::BindOnce(&ArkInferenceService::OnProcessResponse,
-                     weak_ptr_factory_.GetWeakPtr()));
-}
-
-void ArkInferenceService::OnProcessResponse(ProcessRunResult result) {
-  request_in_flight_ = false;
-  runtime_state_ = RuntimeState::kStopped;
-  PromptCallback callback = std::move(active_callback_);
+  busy_conversation_ids_.erase(active->second.conversation_id);
+  PromptCallback callback = std::move(active->second.callback);
+  active_prompts_.erase(active);
+  runtime_state_ =
+      active_prompts_.empty() ? RuntimeState::kStopped : RuntimeState::kReady;
   if (!result.success) {
     if (callback) {
       std::move(callback).Run(result.error, false);
@@ -428,12 +438,13 @@ void ArkInferenceService::OnProcessResponse(ProcessRunResult result) {
   } else if (callback) {
     std::move(callback).Run(result.response, true);
   }
-  DispatchNextPrompt();
+  DispatchPrompts();
 }
 
 void ArkInferenceService::FailPendingPrompts(const std::string& error) {
   while (!pending_prompts_.empty()) {
     PromptCallback callback = std::move(pending_prompts_.front().callback);
+    busy_conversation_ids_.erase(pending_prompts_.front().conversation_id);
     pending_prompts_.pop_front();
     if (callback) {
       std::move(callback).Run(error, false);
@@ -443,9 +454,14 @@ void ArkInferenceService::FailPendingPrompts(const std::string& error) {
 
 void ArkInferenceService::StopServerWithError(const std::string& error) {
   runtime_state_ = RuntimeState::kStopped;
-  request_in_flight_ = false;
-  if (active_callback_) {
-    std::move(active_callback_).Run(error, false);
+  std::map<uint64_t, ActivePrompt> active_prompts = std::move(active_prompts_);
+  active_prompts_.clear();
+  for (auto& entry : active_prompts) {
+    ActivePrompt& active = entry.second;
+    busy_conversation_ids_.erase(active.conversation_id);
+    if (active.callback) {
+      std::move(active.callback).Run(error, false);
+    }
   }
   FailPendingPrompts(error);
 }

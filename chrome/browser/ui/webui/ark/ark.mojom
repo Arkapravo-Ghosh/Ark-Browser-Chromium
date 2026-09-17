@@ -80,8 +80,10 @@ interface PageHandler {
   PauseLocalModelDownload() => (LocalModelState state);
   ResumeLocalModelDownload() => (LocalModelState state);
   DeleteLocalModel(string model_id) => (LocalModelState state);
-  SendChatPrompt(string conversation_id, string message, string? image_data)
+  SendChatPrompt(string conversation_id, string message, string? image_data,
+      string? provider_credential)
       => (string response, bool success);
-  GenerateConversationTitle(string conversation_id, string user_message)
+  GenerateConversationTitle(string conversation_id, string user_message,
+      string? provider_credential)
       => (string title, bool success);
 };

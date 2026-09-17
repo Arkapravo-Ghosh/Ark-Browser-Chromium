@@ -8,7 +8,9 @@
 
 #include "base/functional/bind.h"
 #include "base/functional/callback_helpers.h"
+#include "base/strings/string_util.h"
 #include "base/task/thread_pool.h"
+#include "chrome/browser/ark/ark_cloud_inference_service.h"
 #include "chrome/browser/ark/ark_inference_service.h"
 #include "chrome/browser/ark/ark_paths.h"
 #include "chrome/browser/profiles/profile.h"
@@ -37,7 +39,9 @@ ArkAIService::ArkAIService(Profile* profile, bool in_memory)
            base::TaskShutdownBehavior::BLOCK_SHUTDOWN},
           GetDatabasePath(profile->GetPath(), in_memory))),
       model_manager_(std::make_unique<ArkModelManager>(profile, in_memory)),
-      inference_service_(std::make_unique<ArkInferenceService>(profile)) {
+      inference_service_(std::make_unique<ArkInferenceService>(profile)),
+      cloud_inference_service_(
+          std::make_unique<ArkCloudInferenceService>(profile)) {
   store_.AsyncCall(&ConversationStore::Init)
       .WithArgs(GetDatabasePath(profile->GetPath(), in_memory),
                 GetFallbackDatabasePath(), in_memory)
@@ -64,16 +68,15 @@ void ArkAIService::GetChatState(StateCallback callback) {
 void ArkAIService::GetConversations(ConversationsCallback callback) {
   auto [success_callback, failure_callback] =
       base::SplitOnceCallback(std::move(callback));
-  RunWhenReady(
-      base::BindOnce(
-          [](base::SequenceBound<ConversationStore>* store,
-             ConversationsCallback callback) {
-            store->AsyncCall(&ConversationStore::GetConversations)
-                .Then(std::move(callback));
-          },
-          &store_, std::move(success_callback)),
-      base::BindOnce(std::move(failure_callback),
-                     std::vector<ConversationState>()));
+  RunWhenReady(base::BindOnce(
+                   [](base::SequenceBound<ConversationStore>* store,
+                      ConversationsCallback callback) {
+                     store->AsyncCall(&ConversationStore::GetConversations)
+                         .Then(std::move(callback));
+                   },
+                   &store_, std::move(success_callback)),
+               base::BindOnce(std::move(failure_callback),
+                              std::vector<ConversationState>()));
 }
 
 void ArkAIService::CreateConversation(std::string model_name,
@@ -110,16 +113,15 @@ void ArkAIService::SwitchConversation(std::string id, StateCallback callback) {
 void ArkAIService::DeleteConversation(std::string id, ResultCallback callback) {
   auto [success_callback, failure_callback] =
       base::SplitOnceCallback(std::move(callback));
-  RunWhenReady(
-      base::BindOnce(
-          [](base::SequenceBound<ConversationStore>* store, std::string id,
-             ResultCallback callback) {
-            store->AsyncCall(&ConversationStore::DeleteConversation)
-                .WithArgs(std::move(id))
-                .Then(std::move(callback));
-          },
-          &store_, std::move(id), std::move(success_callback)),
-      base::BindOnce(std::move(failure_callback), false));
+  RunWhenReady(base::BindOnce(
+                   [](base::SequenceBound<ConversationStore>* store,
+                      std::string id, ResultCallback callback) {
+                     store->AsyncCall(&ConversationStore::DeleteConversation)
+                         .WithArgs(std::move(id))
+                         .Then(std::move(callback));
+                   },
+                   &store_, std::move(id), std::move(success_callback)),
+               base::BindOnce(std::move(failure_callback), false));
 }
 
 void ArkAIService::GetMessages(std::string conversation_id,
@@ -135,8 +137,7 @@ void ArkAIService::GetMessages(std::string conversation_id,
                 .Then(std::move(callback));
           },
           &store_, std::move(conversation_id), std::move(success_callback)),
-      base::BindOnce(std::move(failure_callback),
-                     std::vector<ChatMessage>()));
+      base::BindOnce(std::move(failure_callback), std::vector<ChatMessage>()));
 }
 
 void ArkAIService::AddMessage(std::string conversation_id,
@@ -149,9 +150,8 @@ void ArkAIService::AddMessage(std::string conversation_id,
   RunWhenReady(
       base::BindOnce(
           [](base::SequenceBound<ConversationStore>* store,
-             std::string conversation_id, std::string role,
-             std::string content, std::string model_name,
-             ResultCallback callback) {
+             std::string conversation_id, std::string role, std::string content,
+             std::string model_name, ResultCallback callback) {
             store->AsyncCall(&ConversationStore::AddMessage)
                 .WithArgs(std::move(conversation_id), std::move(role),
                           std::move(content), std::move(model_name))
@@ -217,76 +217,130 @@ void ArkAIService::SaveDraft(std::string id,
       base::BindOnce(std::move(failure_callback), false));
 }
 
-void ArkAIService::SendChatPrompt(std::string conversation_id,
-                                  std::string message,
-                                  std::optional<std::string> image_data,
-                                  PromptCallback callback) {
+void ArkAIService::SendChatPrompt(
+    std::string conversation_id,
+    std::string message,
+    std::optional<std::string> image_data,
+    std::optional<std::string> provider_credential,
+    PromptCallback callback) {
   auto [success_callback, failure_callback] =
       base::SplitOnceCallback(std::move(callback));
   RunWhenReady(
       base::BindOnce(
-          [](ArkAIService* self, std::string conv_id, std::string msg,
-             std::optional<std::string> img, PromptCallback cb) {
-            self->store_.AsyncCall(&ConversationStore::GetConversation)
-                .WithArgs(conv_id)
-                .Then(base::BindOnce(
-                    [](ArkAIService* ai, std::string cid, std::string prompt,
-                       std::optional<std::string> image, PromptCallback prompt_cb,
-                       ConversationState conv) {
-                      const std::string model_name =
-                          conv.model_name.empty()
-                              ? "local:mlx:llama-3.2-11b-vision-instruct"
-                              : conv.model_name;
-                      ai->store_.AsyncCall(&ConversationStore::GetMessages)
-                          .WithArgs(cid)
-                          .Then(base::BindOnce(
-                              [](ArkAIService* ai, std::string cid,
-                                 std::string prompt,
-                                 std::optional<std::string> image,
-                                 std::string model_name,
-                                 PromptCallback prompt_cb,
-                                 std::vector<ChatMessage> history) {
-                                ai->store_.AsyncCall(&ConversationStore::AddMessage)
-                                    .WithArgs(cid, "user", prompt, model_name)
-                                    .Then(base::BindOnce([](bool) {}));
-
-                                if (!ai->inference_service_) {
-                                  std::move(prompt_cb).Run(
-                                      "Inference service unavailable.", false);
-                                  return;
-                                }
-
-                                ai->inference_service_->SendPrompt(
-                                    cid, model_name, prompt, image, history,
-                                    base::BindOnce(&ArkAIService::OnPromptCompleted,
-                                                   ai->weak_ptr_factory_.GetWeakPtr(),
-                                                   cid, model_name,
-                                                   std::move(prompt_cb)));
-                              },
-                              ai, cid, prompt, image, model_name,
-                              std::move(prompt_cb)));
-                    },
-                    self, conv_id, msg, img, std::move(cb)));
-          },
-          this, conversation_id, message, image_data,
-          std::move(success_callback)),
+          &ArkAIService::BeginChatPrompt, weak_ptr_factory_.GetWeakPtr(),
+          std::move(conversation_id), std::move(message), std::move(image_data),
+          std::move(provider_credential), std::move(success_callback)),
       base::BindOnce(std::move(failure_callback),
                      "Chat service failed to initialize.", false));
 }
 
-void ArkAIService::GenerateConversationTitle(std::string conversation_id,
-                                              std::string user_message,
-                                              PromptCallback callback) {
+void ArkAIService::BeginChatPrompt(
+    std::string conversation_id,
+    std::string message,
+    std::optional<std::string> image_data,
+    std::optional<std::string> provider_credential,
+    PromptCallback callback) {
+  if (active_chat_conversation_ids_.contains(conversation_id)) {
+    std::move(callback).Run(
+        "This conversation is already generating a response.", false);
+    return;
+  }
+  active_chat_conversation_ids_.insert(conversation_id);
+  store_.AsyncCall(&ConversationStore::GetConversation)
+      .WithArgs(conversation_id)
+      .Then(base::BindOnce(
+          &ArkAIService::OnConversationReady, weak_ptr_factory_.GetWeakPtr(),
+          std::move(conversation_id), std::move(message), std::move(image_data),
+          std::move(provider_credential), std::move(callback)));
+}
+
+void ArkAIService::OnConversationReady(
+    std::string conversation_id,
+    std::string message,
+    std::optional<std::string> image_data,
+    std::optional<std::string> provider_credential,
+    PromptCallback callback,
+    ConversationState conversation) {
+  if (conversation.id.empty()) {
+    active_chat_conversation_ids_.erase(conversation_id);
+    std::move(callback).Run("Conversation not found.", false);
+    return;
+  }
+  const std::string model_name = conversation.model_name.empty()
+                                     ? "local:mlx:llama-3.2-11b-vision-instruct"
+                                     : conversation.model_name;
+  store_.AsyncCall(&ConversationStore::GetMessages)
+      .WithArgs(conversation_id)
+      .Then(base::BindOnce(
+          [](base::WeakPtr<ArkAIService> self, std::string conversation_id,
+             std::string message, std::optional<std::string> image_data,
+             std::optional<std::string> provider_credential,
+             std::string model_name, PromptCallback callback,
+             std::vector<ChatMessage> history) {
+            if (!self) {
+              return;
+            }
+            const bool accepted = self->DispatchPrompt(
+                conversation_id, model_name, message, std::move(image_data),
+                std::move(provider_credential), std::move(history),
+                base::BindOnce(&ArkAIService::OnPromptCompleted, self,
+                               conversation_id, model_name,
+                               std::move(callback)));
+            if (accepted) {
+              self->store_.AsyncCall(&ConversationStore::AddMessage)
+                  .WithArgs(conversation_id, "user", message, model_name)
+                  .Then(base::BindOnce([](bool) {}));
+            }
+          },
+          weak_ptr_factory_.GetWeakPtr(), std::move(conversation_id),
+          std::move(message), std::move(image_data),
+          std::move(provider_credential), model_name, std::move(callback)));
+}
+
+bool ArkAIService::DispatchPrompt(
+    std::string request_key,
+    std::string model_name,
+    std::string prompt,
+    std::optional<std::string> image_data,
+    std::optional<std::string> provider_credential,
+    std::vector<ChatMessage> history,
+    PromptCallback callback) {
+  if (base::StartsWith(model_name, "cloud:gemini")) {
+    if (!cloud_inference_service_) {
+      std::move(callback).Run("Cloud inference service unavailable.", false);
+      return false;
+    }
+    return cloud_inference_service_->SendPrompt(model_name, prompt, image_data,
+                                                history, provider_credential,
+                                                std::move(callback));
+  }
+  if (!inference_service_) {
+    std::move(callback).Run("Local inference service unavailable.", false);
+    return false;
+  }
+  return inference_service_->SendPrompt(request_key, model_name, prompt,
+                                        image_data, history,
+                                        std::move(callback));
+}
+
+void ArkAIService::GenerateConversationTitle(
+    std::string conversation_id,
+    std::string user_message,
+    std::optional<std::string> provider_credential,
+    PromptCallback callback) {
   auto [success_callback, failure_callback] =
       base::SplitOnceCallback(std::move(callback));
   RunWhenReady(
       base::BindOnce(
           [](ArkAIService* self, std::string conversation_id,
-             std::string user_message, PromptCallback callback) {
+             std::string user_message,
+             std::optional<std::string> provider_credential,
+             PromptCallback callback) {
             self->store_.AsyncCall(&ConversationStore::GetConversation)
                 .WithArgs(conversation_id)
                 .Then(base::BindOnce(
                     [](ArkAIService* ai, std::string cid, std::string message,
+                       std::optional<std::string> provider_credential,
                        PromptCallback title_callback,
                        ConversationState conversation) {
                       const std::string model_name =
@@ -299,20 +353,16 @@ void ArkAIService::GenerateConversationTitle(std::string conversation_id,
                           "quotes, punctuation, or explanation.\n\nUser "
                           "message:\n" +
                           message;
-                      if (!ai->inference_service_) {
-                        std::move(title_callback).Run(
-                            "Inference service unavailable.", false);
-                        return;
-                      }
-                      ai->inference_service_->SendPrompt(
-                          cid, model_name, prompt, std::nullopt, {},
-                          std::move(title_callback));
+                      ai->DispatchPrompt(cid + ":title", model_name, prompt,
+                                         std::nullopt,
+                                         std::move(provider_credential), {},
+                                         std::move(title_callback));
                     },
                     self, std::move(conversation_id), std::move(user_message),
-                    std::move(callback)));
+                    std::move(provider_credential), std::move(callback)));
           },
           this, std::move(conversation_id), std::move(user_message),
-          std::move(success_callback)),
+          std::move(provider_credential), std::move(success_callback)),
       base::BindOnce(std::move(failure_callback),
                      "Chat service failed to initialize.", false));
 }
@@ -324,10 +374,26 @@ void ArkAIService::OnPromptCompleted(std::string conversation_id,
                                      bool success) {
   if (success && !response.empty()) {
     store_.AsyncCall(&ConversationStore::AddMessage)
-        .WithArgs(std::move(conversation_id), "assistant", response,
-                  std::move(model_name))
-        .Then(base::BindOnce([](bool) {}));
+        .WithArgs(conversation_id, "assistant", response, std::move(model_name))
+        .Then(base::BindOnce(
+            [](base::WeakPtr<ArkAIService> self, std::string conversation_id,
+               PromptCallback callback, std::string response, bool stored) {
+              if (!self) {
+                return;
+              }
+              self->active_chat_conversation_ids_.erase(conversation_id);
+              if (!stored) {
+                std::move(callback).Run(
+                    "Ark generated a response but could not save it.", false);
+                return;
+              }
+              std::move(callback).Run(response, true);
+            },
+            weak_ptr_factory_.GetWeakPtr(), std::move(conversation_id),
+            std::move(callback), response));
+    return;
   }
+  active_chat_conversation_ids_.erase(conversation_id);
   std::move(callback).Run(response, success);
 }
 
@@ -363,9 +429,8 @@ void ArkAIService::ResumeLocalModelDownload(
   model_manager_->ResumeDownload(std::move(callback));
 }
 
-void ArkAIService::DeleteLocalModel(
-    std::string model_id,
-    ArkModelManager::StateCallback callback) {
+void ArkAIService::DeleteLocalModel(std::string model_id,
+                                    ArkModelManager::StateCallback callback) {
   if (inference_service_) {
     inference_service_->StopServer();
   }

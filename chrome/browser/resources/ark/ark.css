@@ -374,9 +374,27 @@ nav a:not([aria-current='page']):hover {
 
 .conversation-item-title {
   display: block;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.conversation-item.generating .conversation-item-btn::after {
+  animation: conversation-generation-pulse 1.2s ease-in-out infinite;
+  background: var(--accent-ink);
+  border-radius: 50%;
+  content: '';
+  flex: 0 0 6px;
+  height: 6px;
+  width: 6px;
+}
+
+@keyframes conversation-generation-pulse {
+  0%,
+  100% { opacity: 0.35; }
+  50% { opacity: 1; }
 }
 
 .conversation-delete-btn {

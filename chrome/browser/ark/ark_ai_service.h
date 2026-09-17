@@ -6,6 +6,8 @@
 #define CHROME_BROWSER_ARK_ARK_AI_SERVICE_H_
 
 #include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -20,6 +22,7 @@
 class Profile;
 
 namespace ark {
+class ArkCloudInferenceService;
 class ArkInferenceService;
 
 class ArkAIService : public KeyedService {
@@ -56,9 +59,11 @@ class ArkAIService : public KeyedService {
   void SendChatPrompt(std::string conversation_id,
                       std::string message,
                       std::optional<std::string> image_data,
+                      std::optional<std::string> provider_credential,
                       PromptCallback callback);
   void GenerateConversationTitle(std::string conversation_id,
                                  std::string user_message,
+                                 std::optional<std::string> provider_credential,
                                  PromptCallback callback);
   void SearchLocalModels(std::string query,
                          ArkModelManager::SearchCallback callback);
@@ -73,6 +78,24 @@ class ArkAIService : public KeyedService {
                         ArkModelManager::StateCallback callback);
 
  private:
+  void BeginChatPrompt(std::string conversation_id,
+                       std::string message,
+                       std::optional<std::string> image_data,
+                       std::optional<std::string> provider_credential,
+                       PromptCallback callback);
+  void OnConversationReady(std::string conversation_id,
+                           std::string message,
+                           std::optional<std::string> image_data,
+                           std::optional<std::string> provider_credential,
+                           PromptCallback callback,
+                           ConversationState conversation);
+  bool DispatchPrompt(std::string request_key,
+                      std::string model_name,
+                      std::string prompt,
+                      std::optional<std::string> image_data,
+                      std::optional<std::string> provider_credential,
+                      std::vector<ChatMessage> history,
+                      PromptCallback callback);
   void OnInitialized(bool success);
   void OnPromptCompleted(std::string conversation_id,
                          std::string model_name,
@@ -84,6 +107,8 @@ class ArkAIService : public KeyedService {
   base::SequenceBound<ConversationStore> store_;
   std::unique_ptr<ArkModelManager> model_manager_;
   std::unique_ptr<ArkInferenceService> inference_service_;
+  std::unique_ptr<ArkCloudInferenceService> cloud_inference_service_;
+  std::set<std::string> active_chat_conversation_ids_;
   bool initializing_ = true;
   bool ready_ = false;
   std::vector<base::OnceClosure> pending_operations_;

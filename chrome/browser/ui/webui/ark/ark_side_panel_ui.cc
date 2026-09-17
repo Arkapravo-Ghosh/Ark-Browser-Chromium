@@ -66,10 +66,9 @@ std::vector<ark::mojom::ChatMessagePtr> ToMojom(
 
 ark::mojom::LocalModelStatePtr ToMojom(ark::LocalModelState state) {
   return ark::mojom::LocalModelState::New(
-      state.model_id, state.display_name, state.variant,
-      state.runtime_backend, state.state,
-      state.detail, state.bytes_downloaded, state.bytes_total, state.can_start,
-      state.can_pause, state.can_resume, state.installed,
+      state.model_id, state.display_name, state.variant, state.runtime_backend,
+      state.state, state.detail, state.bytes_downloaded, state.bytes_total,
+      state.can_start, state.can_pause, state.can_resume, state.installed,
       state.runtime_compatible);
 }
 
@@ -94,8 +93,7 @@ std::vector<ark::mojom::InstalledLocalModelPtr> ToMojom(
         std::move(model.model_id), std::move(model.display_name),
         std::move(model.repository), std::move(model.revision),
         std::move(model.variant), std::move(model.runtime_backend),
-        model.bytes_total,
-        model.runtime_compatible));
+        model.bytes_total, model.runtime_compatible));
   }
   return converted;
 }
@@ -194,16 +192,15 @@ void ArkSidePanelUI::GetConversations(GetConversationsCallback callback) {
 }
 
 void ArkSidePanelUI::CreateConversation(const std::string& model_name,
-                                         CreateConversationCallback callback) {
+                                        CreateConversationCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
       ->CreateConversation(
-          model_name,
-          base::BindOnce(
-              [](CreateConversationCallback callback,
-                 ark::ConversationState state) {
-                std::move(callback).Run(ToMojom(std::move(state)));
-              },
-              std::move(callback)));
+          model_name, base::BindOnce(
+                          [](CreateConversationCallback callback,
+                             ark::ConversationState state) {
+                            std::move(callback).Run(ToMojom(std::move(state)));
+                          },
+                          std::move(callback)));
 }
 
 void ArkSidePanelUI::SwitchConversation(const std::string& conversation_id,
@@ -371,34 +368,37 @@ void ArkSidePanelUI::ResumeLocalModelDownload(
           std::move(callback)));
 }
 
-void ArkSidePanelUI::DeleteLocalModel(
-    const std::string& model_id,
-    DeleteLocalModelCallback callback) {
+void ArkSidePanelUI::DeleteLocalModel(const std::string& model_id,
+                                      DeleteLocalModelCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
-      ->DeleteLocalModel(model_id, base::BindOnce(
-          [](DeleteLocalModelCallback callback, ark::LocalModelState state) {
-            std::move(callback).Run(ToMojom(std::move(state)));
-          },
-          std::move(callback)));
+      ->DeleteLocalModel(
+          model_id, base::BindOnce(
+                        [](DeleteLocalModelCallback callback,
+                           ark::LocalModelState state) {
+                          std::move(callback).Run(ToMojom(std::move(state)));
+                        },
+                        std::move(callback)));
 }
 
 void ArkSidePanelUI::SendChatPrompt(
     const std::string& conversation_id,
     const std::string& message,
     const std::optional<std::string>& image_data,
+    const std::optional<std::string>& provider_credential,
     SendChatPromptCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
       ->SendChatPrompt(conversation_id, message, image_data,
-                       std::move(callback));
+                       provider_credential, std::move(callback));
 }
 
 void ArkSidePanelUI::GenerateConversationTitle(
     const std::string& conversation_id,
     const std::string& user_message,
+    const std::optional<std::string>& provider_credential,
     GenerateConversationTitleCallback callback) {
   ark::ArkAIServiceFactory::GetForProfile(Profile::FromWebUI(web_ui()))
       ->GenerateConversationTitle(conversation_id, user_message,
-                                  std::move(callback));
+                                  provider_credential, std::move(callback));
 }
 
 void ArkSidePanelUI::OpenSidebarWithDraft(

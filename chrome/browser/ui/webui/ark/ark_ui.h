@@ -79,10 +79,12 @@ class ArkUI : public ui::MojoWebUIController, public ark::mojom::PageHandler {
   void SendChatPrompt(const std::string& conversation_id,
                       const std::string& message,
                       const std::optional<std::string>& image_data,
+                      const std::optional<std::string>& provider_credential,
                       SendChatPromptCallback callback) override;
   void GenerateConversationTitle(
       const std::string& conversation_id,
       const std::string& user_message,
+      const std::optional<std::string>& provider_credential,
       GenerateConversationTitleCallback callback) override;
   void OpenSidebarWithDraft(const std::string& draft,
                             OpenSidebarWithDraftCallback callback) override;

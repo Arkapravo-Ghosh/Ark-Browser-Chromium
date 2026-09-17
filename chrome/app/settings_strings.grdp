@@ -247,8 +247,8 @@
     <message name="IDS_SETTINGS_RESET_TOOLBAR_TO_DEFAULT" desc="Accessibility label of the button which resets toolbar customizations to default settings">
       Reset toolbar to default settings
     </message>
-    <message name="IDS_SETTINGS_CHROME_COLORS" desc="Text of the label describing 'Chrome Colors' theme.">
-      Chrome Colors
+    <message name="IDS_SETTINGS_CHROME_COLORS" desc="Text of the label describing the 'Ark Browser Colors' theme.">
+      Ark Browser Colors
     </message>
     <message name="IDS_SETTINGS_COLOR_SCHEME_MODE" desc="Text of the label for selecting a color scheme mode for the browser.">
       Mode

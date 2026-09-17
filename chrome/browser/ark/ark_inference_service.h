@@ -5,9 +5,12 @@
 #ifndef CHROME_BROWSER_ARK_ARK_INFERENCE_SERVICE_H_
 #define CHROME_BROWSER_ARK_ARK_INFERENCE_SERVICE_H_
 
+#include <cstdint>
 #include <deque>
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -45,7 +48,7 @@ class ArkInferenceService {
   explicit ArkInferenceService(Profile* profile);
   ~ArkInferenceService();
 
-  void SendPrompt(const std::string& conversation_id,
+  bool SendPrompt(const std::string& conversation_id,
                   const std::string& model_id,
                   const std::string& prompt,
                   const std::optional<std::string>& image_data,
@@ -77,23 +80,28 @@ class ArkInferenceService {
     bool success = false;
   };
 
-  static ProcessRunResult RunPromptInProcess(std::string model_id,
-                                              std::string prompt,
-                                              std::optional<std::string> image_data,
-                                              std::vector<ChatMessage> history);
+  struct ActivePrompt {
+    std::string conversation_id;
+    PromptCallback callback;
+  };
 
-  void StartServer();
-  void DispatchNextPrompt();
-  void OnProcessResponse(ProcessRunResult result);
+  static ProcessRunResult RunPromptInProcess(
+      std::string model_id,
+      std::string prompt,
+      std::optional<std::string> image_data,
+      std::vector<ChatMessage> history);
+
+  void DispatchPrompts();
+  void OnProcessResponse(uint64_t request_id, ProcessRunResult result);
   void FailPendingPrompts(const std::string& error);
   void StopServerWithError(const std::string& error);
 
   const raw_ptr<Profile> profile_;
   RuntimeState runtime_state_ = RuntimeState::kStopped;
   std::deque<PendingPrompt> pending_prompts_;
-  PromptCallback active_callback_;
-  bool request_in_flight_ = false;
-  std::string active_model_id_;
+  std::map<uint64_t, ActivePrompt> active_prompts_;
+  std::set<std::string> busy_conversation_ids_;
+  uint64_t next_request_id_ = 1;
   base::WeakPtrFactory<ArkInferenceService> weak_ptr_factory_{this};
 };
 

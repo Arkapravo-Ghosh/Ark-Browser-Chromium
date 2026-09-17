@@ -33,7 +33,8 @@ let draftSaveTimer = 0;
 let aiSearchMode = false;
 const PREPARED_LOCAL_MODEL = 'local:mlx:llama-3.2-11b-vision-instruct';
 let activeModel = PREPARED_LOCAL_MODEL;
-let isGenerating = false;
+const generatingConversationIds = new Set<string>();
+const pendingUserMessages = new Map<string, ChatMessage>();
 let currentLocalModelState: LocalModelState | null = null;
 let installedLocalModels: InstalledLocalModel[] = [];
 const isSidePanel = location.host === 'ark-side-panel';
@@ -165,6 +166,8 @@ function updateSendButtonState(): void {
   const hasGemini = Boolean(localStorage.getItem(GEMINI_KEY_STORAGE)?.trim());
   const isReady = activeModel.startsWith('local:') ? isInstalled : hasGemini;
 
+  const isGenerating = Boolean(
+      conversationId && generatingConversationIds.has(conversationId));
   sendBtn.disabled = !hasText || !isReady || isGenerating;
   if (isGenerating) {
     sendBtn.title = 'Generating response…';
@@ -842,23 +845,48 @@ function renderMessageBubble(
   return bubble;
 }
 
+function renderGeneratingBubble(
+    targetConversationId: string, modelName: string): HTMLElement {
+  const bubble = renderMessageBubble('assistant', '', modelName, Date.now());
+  bubble.dataset['generationConversationId'] = targetConversationId;
+  renderTypingIndicator(bubble);
+  return bubble;
+}
+
 async function loadMessages(): Promise<void> {
-  if (!conversationId || isGenerating) {
+  if (!conversationId) {
     return;
   }
   const requestedConversationId = conversationId;
   try {
     const {messages}: {messages: ChatMessage[]} =
         await pageHandler.getMessages(requestedConversationId);
-    if (isGenerating || conversationId !== requestedConversationId || freshChat) {
+    if (conversationId !== requestedConversationId || freshChat) {
       return;
     }
-    currentMessages = messages ? [...messages] : [];
+    const persistedMessages = messages ? [...messages] : [];
+    const pendingUserMessage = pendingUserMessages.get(requestedConversationId);
+    if (pendingUserMessage && !persistedMessages.some(
+        message => message.role === 'user' &&
+            message.content === pendingUserMessage.content)) {
+      persistedMessages.push(pendingUserMessage);
+    }
+    currentMessages = persistedMessages;
     const chatPage = get('chat-page');
     const chatMessages = get('chat-messages');
     const chatEmpty = get('chat-empty');
-    if (!messages || messages.length === 0) {
-      if (chatMessages.children.length === 0) {
+    if (persistedMessages.length === 0) {
+      chatMessages.replaceChildren();
+      if (generatingConversationIds.has(requestedConversationId)) {
+        chatPage.classList.add('has-messages');
+        chatEmpty.hidden = true;
+        chatMessages.hidden = false;
+        const generatingConversation = conversationsList.find(
+            item => item.id === requestedConversationId);
+        renderGeneratingBubble(
+            requestedConversationId,
+            getModelDisplayName(generatingConversation?.modelName || activeModel));
+      } else {
         chatPage.classList.remove('has-messages');
         chatEmpty.hidden = false;
         chatMessages.hidden = true;
@@ -868,11 +896,18 @@ async function loadMessages(): Promise<void> {
       chatEmpty.hidden = true;
       chatMessages.hidden = false;
       chatMessages.replaceChildren();
-      for (const m of messages) {
+      for (const m of persistedMessages) {
         const badge = m.role === 'assistant'
             ? (getModelDisplayName(m.modelName) || getModelDisplayName(activeModel))
             : '';
         renderMessageBubble(m.role, m.content, badge, m.createdAt);
+      }
+      if (generatingConversationIds.has(requestedConversationId)) {
+        const generatingConversation = conversationsList.find(
+            item => item.id === requestedConversationId);
+        renderGeneratingBubble(
+            requestedConversationId,
+            getModelDisplayName(generatingConversation?.modelName || activeModel));
       }
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -918,6 +953,10 @@ function renderConversationList(): void {
     if (currentRoute === 'chat' && conv.id === conversationId) {
       item.classList.add('active');
     }
+    if (generatingConversationIds.has(conv.id)) {
+      item.classList.add('generating');
+      item.setAttribute('aria-busy', 'true');
+    }
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -943,6 +982,10 @@ function renderConversationList(): void {
     delBtn.className = 'conversation-delete-btn';
     delBtn.title = 'Delete conversation';
     delBtn.setAttribute('aria-label', `Delete conversation ${conv.title || ''}`);
+    delBtn.disabled = generatingConversationIds.has(conv.id);
+    if (delBtn.disabled) {
+      delBtn.title = 'Wait for this response to finish before deleting';
+    }
 
     const delIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     delIcon.setAttribute('class', 'mat-icon mat-icon-sm');
@@ -963,9 +1006,6 @@ function renderConversationList(): void {
 }
 
 async function switchToConversation(id: string): Promise<void> {
-  if (isGenerating) {
-    return;
-  }
   const switchEpoch = ++conversationStateEpoch;
   try {
     const {state} = await pageHandler.switchConversation(id);
@@ -997,6 +1037,12 @@ async function switchToConversation(id: string): Promise<void> {
 }
 
 async function deleteConversation(id: string): Promise<void> {
+  if (generatingConversationIds.has(id)) {
+    showArkNotice(
+        'Response in progress',
+        'Wait for this conversation to finish generating before deleting it.');
+    return;
+  }
   try {
     await pageHandler.deleteConversation(id);
     conversationsList = conversationsList.filter(c => c.id !== id);
@@ -1015,9 +1061,6 @@ async function deleteConversation(id: string): Promise<void> {
 }
 
 function createNewChat(): void {
-  if (isGenerating) {
-    return;
-  }
   // Keep an empty new chat transient. The backend conversation is created by
   // sendMessage() only when the first prompt is submitted.
   freshChat = true;
@@ -1060,82 +1103,35 @@ async function streamTextToBubble(fullText: string, bubble: HTMLElement): Promis
   return fullText;
 }
 
-function synthesizeLocalText(prompt: string, history: ChatMessage[] = []): string {
-  const p = prompt.trim();
-  if (!p) return "How can I help?";
-
-  const previousUser = [...history].reverse().find(m => m.role === 'user' && m.content.trim() !== '');
-  const lower = p.toLowerCase();
-
-  if (/what\s+(did|was)\s+(i|my)\s+(ask|say|question)|repeat\s+my\s+question/i.test(lower)) {
-    return previousUser ?
-        `Your previous question was: "${previousUser.content}"` :
-        "This is the first message in this chat.";
-  }
-
-  if (/armstrong/i.test(lower) && /python|code/i.test(lower)) {
-    return "```python\n" +
-           "def is_armstrong(number: int) -> bool:\n" +
-           "    digits = str(number)\n" +
-           "    power = len(digits)\n" +
-           "    return number == sum(int(digit) ** power for digit in digits)\n\n" +
-           "number = int(input('Enter a number: '))\n" +
-           "print('Armstrong number' if is_armstrong(number) else 'Not an Armstrong number')\n" +
-           "```";
-  }
-
-  const math = lower.match(/^(?:what is|calculate|compute)?\s*(\d+(?:\.\d+)?)\s*([+\-*\/])\s*(\d+(?:\.\d+)?)\s*\??$/i);
-  if (math) {
-    const a = Number(math[1]);
-    const b = Number(math[3]);
-    const result = math[2] === '+' ? a + b :
-        math[2] === '-' ? a - b :
-        math[2] === '*' ? a * b : (b === 0 ? NaN : a / b);
-    return Number.isFinite(result) ? String(result) : "I cannot divide by zero.";
-  }
-
-  if (/^(hi|hey|hello|good morning|good afternoon|good evening)\b/i.test(lower)) {
-    return "Hello! How can I help?";
-  }
-
-  return `I'm here to help with: ${p}`;
-}
-async function streamGeminiResponse(prompt: string, bubble: HTMLElement): Promise<string> {
-  const apiKey = (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
-  if (!apiKey) throw new Error('Gemini API key is missing.');
-  const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({contents: [{parts: [{text: prompt}]}]}),
-      });
-  if (!response.ok) throw new Error(`Gemini request failed (${response.status}).`);
-  const data = await response.json() as {
-    candidates?: {content?: {parts?: {text?: string}[]}}[];
-  };
-  const text = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || '';
-  if (!text) throw new Error('Gemini returned an empty response.');
-  return streamTextToBubble(text, bubble);
-}
-
-async function generateLocalResponse(prompt: string, bubble: HTMLElement): Promise<string> {
-  const result = await pageHandler.sendChatPrompt(conversationId, prompt, null);
-  if (!result.success) throw new Error(result.response || 'Local model request failed.');
+async function generateResponse(
+    targetConversationId: string, prompt: string,
+    modelName: string): Promise<string> {
+  const providerCredential = modelName.startsWith('cloud:gemini') ?
+      (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim() : null;
+  const result = await pageHandler.sendChatPrompt(
+      targetConversationId, prompt, null, providerCredential);
+  if (!result.success) throw new Error(result.response || 'Model request failed.');
   const text = result.response || '';
-  if (!text) throw new Error('Local model returned an empty response.');
-  return streamTextToBubble(text, bubble);
+  if (!text) throw new Error('The model returned an empty response.');
+  return text;
 }
 
-async function generateAndApplyConversationTitle(userMessage: string): Promise<void> {
-  if (!conversationId) return;
-  const result = await pageHandler.generateConversationTitle(conversationId, userMessage);
+async function generateAndApplyConversationTitle(
+    targetConversationId: string, userMessage: string,
+    modelName: string): Promise<void> {
+  if (!targetConversationId) return;
+  const providerCredential = modelName.startsWith('cloud:gemini') ?
+      (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim() : null;
+  const result = await pageHandler.generateConversationTitle(
+      targetConversationId, userMessage, providerCredential);
   const title = (result.title || generateChatTitle(userMessage)).trim();
-  const conversation = conversationsList.find(item => item.id === conversationId);
+  const conversation = conversationsList.find(
+      item => item.id === targetConversationId);
   if (conversation) conversation.title = title;
-  await pageHandler.updateConversationTitle(conversationId, title);
+  await pageHandler.updateConversationTitle(targetConversationId, title);
   await loadConversations();
   const titleElement = document.querySelector<HTMLElement>(
-      `.conversation-item[data-conversation-id="${CSS.escape(conversationId)}"] .conversation-item-title`);
+      `.conversation-item[data-conversation-id="${CSS.escape(targetConversationId)}"] .conversation-item-title`);
   if (!titleElement) return;
   titleElement.textContent = '';
   for (const character of title) {
@@ -1162,7 +1158,7 @@ function generateChatTitle(firstPrompt: string): string {
 }
 
 async function sendMessage(overrideText?: string): Promise<void> {
-  if (isGenerating) {
+  if (conversationId && generatingConversationIds.has(conversationId)) {
     return;
   }
   const text = (overrideText ?? draft.value).trim();
@@ -1195,13 +1191,29 @@ async function sendMessage(overrideText?: string): Promise<void> {
     try {
       const {state} = await pageHandler.createConversation(activeModel);
       conversationId = state?.id || crypto.randomUUID();
+      if (state?.id && !conversationsList.some(item => item.id === state.id)) {
+        conversationsList.unshift(state);
+      }
     } catch {
       conversationId = crypto.randomUUID();
     }
     freshChat = false;
   }
 
+  const requestConversationId = conversationId;
+  const requestModel = activeModel;
   const isFirstMessage = currentMessages.filter(m => m.role === 'user').length === 0;
+  const now = Date.now();
+  const pendingUserMessage: ChatMessage = {
+    id: BigInt(now),
+    conversationId: requestConversationId,
+    role: 'user',
+    content: text,
+    createdAt: BigInt(now),
+    modelName: requestModel,
+  };
+  pendingUserMessages.set(requestConversationId, pendingUserMessage);
+  generatingConversationIds.add(requestConversationId);
   draft.value = '';
   saveDraft();
   updateSendButtonState();
@@ -1212,52 +1224,61 @@ async function sendMessage(overrideText?: string): Promise<void> {
   }
 
   get('chat-page').classList.add('has-messages');
-  const now = Date.now();
   renderMessageBubble('user', text, '', now);
-  currentMessages.push({
-    id: BigInt(now),
-    conversationId,
-    role: 'user',
-    content: text,
-    createdAt: BigInt(now),
-    modelName: activeModel,
-  });
-  isGenerating = true;
+  currentMessages.push(pendingUserMessage);
   updateSendButtonState();
-  const badgeName = getModelDisplayName(activeModel);
-  const bubble = renderMessageBubble('assistant', '', badgeName, now);
-  renderTypingIndicator(bubble);
+  renderConversationList();
+  const badgeName = getModelDisplayName(requestModel);
+  renderGeneratingBubble(requestConversationId, badgeName);
 
   try {
-    let reply = '';
-    if (activeModel.startsWith('cloud:gemini')) {
-      reply = await streamGeminiResponse(text, bubble);
-    } else {
-      reply = await generateLocalResponse(text, bubble);
-    }
+    const reply = await generateResponse(
+        requestConversationId, text, requestModel);
     if (reply) {
+      const visibleBubble = document.querySelector<HTMLElement>(
+          `.message-bubble[data-generation-conversation-id="${CSS.escape(requestConversationId)}"]`);
+      if (visibleBubble && conversationId === requestConversationId &&
+          !freshChat) {
+        await streamTextToBubble(reply, visibleBubble);
+      }
       const replyNow = Date.now();
-      currentMessages.push({
-        id: BigInt(replyNow),
-        conversationId,
-        role: 'assistant',
-        content: reply,
-        createdAt: BigInt(replyNow),
-        modelName: activeModel,
-      });
+      if (conversationId === requestConversationId && !freshChat) {
+        currentMessages.push({
+          id: BigInt(replyNow),
+          conversationId: requestConversationId,
+          role: 'assistant',
+          content: reply,
+          createdAt: BigInt(replyNow),
+          modelName: requestModel,
+        });
+      }
+      generatingConversationIds.delete(requestConversationId);
+      updateSendButtonState();
+      renderConversationList();
       if (isFirstMessage) {
-        await generateAndApplyConversationTitle(text);
+        await generateAndApplyConversationTitle(
+            requestConversationId, text, requestModel);
       } else {
         void loadConversations();
       }
     }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    bubble.textContent = `Error: ${msg}`;
+    const visibleBubble = document.querySelector<HTMLElement>(
+        `.message-bubble[data-generation-conversation-id="${CSS.escape(requestConversationId)}"]`);
+    if (visibleBubble && conversationId === requestConversationId &&
+        !freshChat) {
+      visibleBubble.textContent = `Error: ${msg}`;
+    }
   } finally {
-    isGenerating = false;
+    pendingUserMessages.delete(requestConversationId);
+    generatingConversationIds.delete(requestConversationId);
     updateSendButtonState();
-    draft.focus();
+    renderConversationList();
+    if (conversationId === requestConversationId && !freshChat) {
+      await loadMessages();
+      draft.focus();
+    }
   }
 }
 
@@ -1268,6 +1289,12 @@ sendButton?.addEventListener('click', () => {
 
 async function loadChatState(): Promise<void> {
   if (freshChat) {
+    return;
+  }
+  if (conversationId) {
+    document.documentElement.dataset['storageReady'] = 'true';
+    void loadConversations();
+    updateSendButtonState();
     return;
   }
   const stateEpoch = conversationStateEpoch;
@@ -1368,9 +1395,7 @@ function renderRoute(focus: boolean): void {
     void refreshLocalModelState();
   }
   if (currentRoute === 'chat') {
-    if (!isGenerating) {
-      void loadMessages();
-    }
+    void loadMessages();
     updateSendButtonState();
   }
   if (focus) {
@@ -2070,7 +2095,9 @@ void refreshInstalledModels();
   safeHtmlPolicy,
   formatMessageTimestamp,
   generateChatTitle,
-  synthesizeLocalText,
+  createNewChat,
+  switchToConversation,
+  getGeneratingConversationIds: () => [...generatingConversationIds],
   getCurrentMessages: () => currentMessages,
   getConversationsList: () => conversationsList,
   getActiveModel: () => activeModel,
